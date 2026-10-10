@@ -14,47 +14,50 @@ public class MouseController : MonoBehaviour
     private JumpState jumpState = JumpState.Grounded;
 
     [Header("Movement")]
-    public float moveSpeed = 10f;
+    [SerializeField] private float moveSpeed = 10f;
     private float moveInputX;
 
     [Header("Ground Check")]
-    public Transform groundCheck;
-    public float groundCheckRadius = 0.3f;
-    public LayerMask groundLayer;
-    public bool isGrounded;
+    [SerializeField] private Transform groundCheck;
+    [SerializeField] private Vector2 groundCheckSize = new Vector2(0.5f, 0.2f);
+    [SerializeField] private float groundCheckRadius = 0.3f;
+    [SerializeField] private LayerMask groundLayer;
+    [SerializeField] private bool isGrounded;
 
     [Header("Jump")]
-    public float minJumpForce = 10f;
-    public float maxJumpForce = 26f;
-    public float maxChargeTime = 0.7f;
-    public float jumpForwardForce = 14f;
+    [SerializeField] private float minJumpForce = 10f;
+    [SerializeField] private float maxJumpForce = 26f;
+    [SerializeField] private float maxChargeTime = 0.7f;
+    [SerializeField] private float jumpForwardForce = 14f;
     private float jumpChargeTime;
     private bool hasLeftGround;
 
     [Header("Mouse Aim")]
-    public float minAimAngle = 15f;
-    public float maxAimAngle = 165f;
+    [SerializeField] private float minAimAngle = 15f;
+    [SerializeField] private float maxAimAngle = 165f;
     private Vector2 aimDirection;
 
     [Header("Jump Trajectory")]
-    public GameObject trajectoryDotPrefab;
-    public int trajectoryDotCount = 36;
-    public float trajectoryTimeStep = 0.05f;
+    [SerializeField] private GameObject trajectoryPoint;
+    [SerializeField] private GameObject trajectoryDotPrefab;
+    [SerializeField] private int trajectoryDotCount = 36;
+    [SerializeField] private float trajectoryTimeStep = 0.05f;
     private Transform[] trajectoryDots;
 
     [Header("Flip")]
-    public SpriteRenderer playerSprite;
+    [SerializeField] private SpriteRenderer playerSprite;
     public float facingDirection = 1f;
 
     [Header("Power UI")]
-    public Scrollbar chargeBar;
-    public Image chargeBarHandle;
-    public Gradient chargeColor;
+    [SerializeField] private Scrollbar chargeBar;
+    [SerializeField] private Image chargeBarHandle;
+    [SerializeField] private Gradient chargeColor;
 
     private Rigidbody2D rb;
     private Collider2D playerCollider;
     private Camera mainCamera;
 
+    #region Event System
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
@@ -92,8 +95,8 @@ public class MouseController : MonoBehaviour
 
         if (Input.GetMouseButtonDown(0) &&
             isGrounded &&
-            jumpState == JumpState.Grounded &&
-            IsMouseOverTumi())
+            jumpState == JumpState.Grounded) //&&
+            //IsMouseOverTumi())
         {
             jumpState = JumpState.Aiming;
             jumpChargeTime = 0f;
@@ -136,16 +139,21 @@ public class MouseController : MonoBehaviour
     {
         Move();
     }
+    #endregion
 
+    #region Walk Mechanic
     private void Move()
     {
-        if (jumpState != JumpState.Grounded)
+        if (jumpState == JumpState.Jumping)
             return;
 
-        rb.linearVelocity = new Vector2(
-            moveInputX * moveSpeed,
-            rb.linearVelocity.y
-        );
+        if (jumpState == JumpState.Aiming)
+        {
+            rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
+            return;
+        }
+
+        rb.linearVelocity = new Vector2(moveInputX * moveSpeed, rb.linearVelocity.y);
     }
 
     private void UpdateFacingDirection()
@@ -166,6 +174,30 @@ public class MouseController : MonoBehaviour
         }
     }
 
+    private void CheckGround()
+    {
+        if (groundCheck == null)
+        {
+            isGrounded = false;
+            return;
+        }
+
+        isGrounded = Physics2D.OverlapBox(
+        groundCheck.position,
+        groundCheckSize,
+        0f,
+        groundLayer
+        ) != null;
+
+        //isGrounded = Physics2D.OverlapCircle(
+        //    groundCheck.position,
+        //    groundCheckRadius,
+        //    groundLayer
+        //);
+    }
+    #endregion
+
+    #region Jump Mechanic
     private void UpdateAimFromMouse()
     {
         Vector2 direction = GetMouseWorldPosition() - rb.position;
@@ -177,9 +209,6 @@ public class MouseController : MonoBehaviour
             direction.y,
             direction.x
         ) * Mathf.Rad2Deg;
-
-        if (angle < 0f)
-            angle += 360f;
 
         angle = Mathf.Clamp(angle, minAimAngle, maxAimAngle);
 
@@ -269,30 +298,15 @@ public class MouseController : MonoBehaviour
         );
     }
 
-    private bool IsMouseOverTumi()
-    {
-        if (playerCollider == null || mainCamera == null)
-            return false;
+    //private bool IsMouseOverTumi()
+    //{
+    //    if (playerCollider == null || mainCamera == null)
+    //        return false;
 
-        return playerCollider.OverlapPoint(
-            GetMouseWorldPosition()
-        );
-    }
-
-    private void CheckGround()
-    {
-        if (groundCheck == null)
-        {
-            isGrounded = false;
-            return;
-        }
-
-        isGrounded = Physics2D.OverlapCircle(
-            groundCheck.position,
-            groundCheckRadius,
-            groundLayer
-        );
-    }
+    //    return playerCollider.OverlapPoint(
+    //        GetMouseWorldPosition()
+    //    );
+    //}
 
     private void Jump()
     {
@@ -319,7 +333,9 @@ public class MouseController : MonoBehaviour
         if (chargeBarHandle != null && chargeColor != null)
             chargeBarHandle.color = chargeColor.Evaluate(0f);
     }
+    #endregion
 
+    #region Jump Trajectory
     // สร้างจุดวิถีกระโดด
     private void CreateTrajectoryDots()
     {
@@ -348,7 +364,7 @@ public class MouseController : MonoBehaviour
         }
 
         float launchSpeed = GetLaunchSpeed();
-        Vector2 startPosition = rb.position;
+        Vector2 startPosition = trajectoryPoint.transform.position;
         Vector2 initialVelocity = aimDirection * launchSpeed;
         float gravityY = Physics2D.gravity.y * rb.gravityScale;
         Vector2 previousPoint = startPosition;
@@ -408,16 +424,22 @@ public class MouseController : MonoBehaviour
         ResetPowerBar();
         HideJumpTrajectory();
     }
-
+    #endregion
 
     private void OnDrawGizmosSelected()
     {
         if (groundCheck == null)
             return;
 
-        Gizmos.DrawWireSphere(
+        //Gizmos.DrawWireSphere(
+        //    groundCheck.position,
+        //    groundCheckRadius
+        //);
+
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireCube(
             groundCheck.position,
-            groundCheckRadius
+            groundCheckSize
         );
     }
 }

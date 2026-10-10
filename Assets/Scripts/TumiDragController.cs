@@ -378,9 +378,9 @@ public class TumiDragController : MonoBehaviour
         if (groundCheck == null)
             return;
 
-        Gizmos.DrawWireSphere(
-            groundCheck.position,
-            groundCheckRadius
-        );
+        //Gizmos.DrawWireSphere(
+        //    groundCheck.position,
+        //    groundCheckRadius
+        //);
     }
 }
