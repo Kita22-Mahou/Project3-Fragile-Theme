@@ -14,40 +14,44 @@ public class PlayerController : MonoBehaviour
     private JumpState jumpState = JumpState.Grounded;
 
     [Header("Movement")]
-    public float moveSpeed = 5f;
-    private float moveInputX;
+    [SerializeField] private float moveSpeed = 5f;
+    [SerializeField] private float moveInputX;
 
     [Header("Ground Check")]
-    public Transform groundCheck;
-    public float groundCheckRadius = 0.2f;
-    public LayerMask groundLayer;
-    public bool isGrounded;
+    [SerializeField] private Transform groundCheck;
+    [SerializeField] private float groundCheckRadius = 0.2f;
+    [SerializeField] private LayerMask groundLayer;
+    [SerializeField] private bool isGrounded;
 
     [Header("Jump")]
-    public float minJumpForce = 5f;
-    public float maxJumpForce = 12f;
-    public float maxChargeTime = 0.6f;
-    public float jumpForwardForce = 8f;
-    private float jumpChargeTime;
-    private bool hasLeftGround;
+    [SerializeField] private float coyoteDragDownAmount;
+    [SerializeField] private float minJumpForce = 5f;
+    [SerializeField] private float maxJumpForce = 12f;
+    [SerializeField] private float maxChargeTime = 0.6f;
+    [SerializeField] private float jumpForwardForce = 8f;
+    [SerializeField] private float jumpChargeTime;
+    [SerializeField] private bool hasLeftGround;
 
     [Header("Jump Trajectory")]
-    public GameObject trajectoryDotPrefab;
-    public int trajectoryDotCount = 36;
-    public float trajectoryTimeStep = 0.05f;
-    private Transform[] trajectoryDots;
+    [SerializeField] private GameObject trajectoryPoint;
+    [SerializeField] private GameObject trajectoryDotPrefab;
+    [SerializeField] private int trajectoryDotCount = 36;
+    [SerializeField] private float trajectoryTimeStep = 0.05f;
+    [SerializeField] private Transform[] trajectoryDots;
+    
 
     [Header("Flip")]
-    public SpriteRenderer playerSprite;
-    public float facingDirection = 1f;
+    [SerializeField] private SpriteRenderer playerSprite;
+    [SerializeField] private float facingDirection = 1f;
 
     [Header("Jump Charge UI")]
-    public Scrollbar chargeBar;
-    public Image chargeBarHandle;
-    public Gradient chargeColor;
+    [SerializeField] private Scrollbar chargeBar;
+    [SerializeField] private Image chargeBarHandle;
+    [SerializeField] private Gradient chargeColor;
 
     private Rigidbody2D rb;
 
+    #region Event System
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
@@ -72,45 +76,8 @@ public class PlayerController : MonoBehaviour
             }
         }
 
-        if (jumpState != JumpState.Jumping)
-            UpdateFacingDirection();
-
-        if (Input.GetKeyDown(KeyCode.Space) &&
-            isGrounded &&
-            jumpState == JumpState.Grounded)
-        {
-            jumpState = JumpState.Charging;
-            jumpChargeTime = 0f;
-            ResetChargeBar();
-        }
-
-        // ชาร์จกระโดด
-        if (jumpState == JumpState.Charging)
-        {
-            if (Input.GetKey(KeyCode.Space))
-            {
-                jumpChargeTime += Time.deltaTime;
-                jumpChargeTime = Mathf.Clamp(jumpChargeTime,0f,maxChargeTime);
-
-                float chargePercent = maxChargeTime > 0f
-                    ? Mathf.Clamp01(jumpChargeTime / maxChargeTime)
-                    : 1f;
-
-                if (chargeBar != null)
-                {
-                    chargeBar.value = 0f;
-                    chargeBar.size = chargePercent;
-                }
-
-                if (chargeBarHandle != null && chargeColor != null)
-                    chargeBarHandle.color = chargeColor.Evaluate(chargePercent);
-            }
-            else
-            {
-                Jump();
-            }
-        }
-
+        ChargeJump();
+        //CoyoteDragDown();
         UpdateJumpTrajectory();
     }
 
@@ -118,11 +85,19 @@ public class PlayerController : MonoBehaviour
     {
         Move();
     }
+    #endregion
 
+    #region Movement
     private void Move()
     {
         if (jumpState == JumpState.Jumping)
             return;
+
+        if (jumpState == JumpState.Charging)
+        {
+            rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
+            return;
+        }
 
         rb.linearVelocity = new Vector2(moveInputX * moveSpeed,rb.linearVelocity.y);
     }
@@ -155,6 +130,13 @@ public class PlayerController : MonoBehaviour
 
         isGrounded = Physics2D.OverlapCircle(groundCheck.position,groundCheckRadius,groundLayer);
     }
+    #endregion
+
+    #region Jump Movement
+    private void CoyoteDragDown()
+    {
+        rb.linearVelocity = new Vector2(rb.linearVelocity.x, rb.linearVelocity.y * coyoteDragDownAmount);
+    }
 
     private void Jump()
     {
@@ -173,6 +155,48 @@ public class PlayerController : MonoBehaviour
         ResetChargeBar();
     }
 
+    private void ChargeJump()
+    {
+        if (jumpState != JumpState.Jumping)
+            UpdateFacingDirection();
+
+        if (Input.GetKeyDown(KeyCode.Space) &&
+            isGrounded &&
+            jumpState == JumpState.Grounded)
+        {
+            jumpState = JumpState.Charging;
+            jumpChargeTime = 0f;
+            ResetChargeBar();
+        }
+
+        // ชาร์จกระโดด
+        if (jumpState == JumpState.Charging)
+        {
+            if (Input.GetKey(KeyCode.Space))
+            {
+                jumpChargeTime += Time.deltaTime;
+                jumpChargeTime = Mathf.Clamp(jumpChargeTime, 0f, maxChargeTime);
+
+                float chargePercent = maxChargeTime > 0f
+                    ? Mathf.Clamp01(jumpChargeTime / maxChargeTime)
+                    : 1f;
+
+                if (chargeBar != null)
+                {
+                    chargeBar.value = 0f;
+                    chargeBar.size = chargePercent;
+                }
+
+                if (chargeBarHandle != null && chargeColor != null)
+                    chargeBarHandle.color = chargeColor.Evaluate(chargePercent);
+            }
+            else
+            {
+                Jump();
+            }
+        }
+    }
+
     private void ResetChargeBar()
     {
         if (chargeBar != null)
@@ -184,7 +208,9 @@ public class PlayerController : MonoBehaviour
         if (chargeBarHandle != null && chargeColor != null)
             chargeBarHandle.color = chargeColor.Evaluate(0f);
     }
+    #endregion
 
+    #region Trajectory Line
     // สร้างจุดวิถีกระโดด
     private void CreateTrajectoryDots()
     {
@@ -196,6 +222,7 @@ public class PlayerController : MonoBehaviour
         for (int i = 0; i < trajectoryDots.Length; i++)
         {
             GameObject dot = Instantiate(trajectoryDotPrefab);
+            dot.transform.SetParent(trajectoryPoint.transform, false);
             trajectoryDots[i] = dot.transform;
             dot.SetActive(false);
         }
@@ -218,7 +245,7 @@ public class PlayerController : MonoBehaviour
 
         float jumpForce = Mathf.Lerp( minJumpForce, maxJumpForce,chargePercent);
 
-        Vector2 startPosition = rb.position;
+        Vector2 startPosition = trajectoryPoint.transform.position;
 
         Vector2 initialVelocity = new Vector2(
             facingDirection * jumpForwardForce,
@@ -274,6 +301,7 @@ public class PlayerController : MonoBehaviour
                 dot.gameObject.SetActive(false);
         }
     }
+    #endregion
 
     private void OnDrawGizmosSelected()
     {
