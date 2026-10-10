@@ -807,7 +807,7 @@ Transform:
   m_GameObject: {fileID: 471497139}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.19, y: -5.95, z: 0}
+  m_LocalPosition: {x: 0.22, y: -5.88, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1991,9 +1991,10 @@ GameObject:
   - component: {fileID: 1921047352}
   - component: {fileID: 1921047356}
   - component: {fileID: 1921047355}
-  - component: {fileID: 1921047353}
   - component: {fileID: 1921047357}
   - component: {fileID: 1921047358}
+  - component: {fileID: 1921047353}
+  - component: {fileID: 1921047359}
   m_Layer: 7
   m_Name: Tumi
   m_TagString: Player
@@ -2010,7 +2011,7 @@ Transform:
   m_GameObject: {fileID: 1921047351}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: -0.4, z: 0}
+  m_LocalPosition: {x: -0.3, y: -2.15, z: 0}
   m_LocalScale: {x: 0.2, y: 0.2, z: 0.2}
   m_ConstrainProportionsScale: 1
   m_Children:
@@ -2031,16 +2032,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 07c601b72227b9c458ca39e92f318894, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
-  moveSpeed: 5
+  moveSpeed: 10
   groundCheck: {fileID: 471497140}
   groundCheckRadius: 0.3
   groundLayer:
     serializedVersion: 2
     m_Bits: 64
+  isGrounded: 0
   minJumpForce: 10
-  maxJumpForce: 35
-  maxChargeTime: 1
-  jumpForwardForce: 10
+  maxJumpForce: 26
+  maxChargeTime: 0.7
+  jumpForwardForce: 14
+  trajectoryDotPrefab: {fileID: 1843257253224819756, guid: 3ef3f55c88efe5641ab91e6d075b3313, type: 3}
+  trajectoryDotCount: 36
+  trajectoryTimeStep: 0.04
   playerSprite: {fileID: 1921047356}
   facingDirection: 1
   chargeBar: {fileID: 305718094}
@@ -2075,7 +2080,6 @@ MonoBehaviour:
     m_ColorSpace: 0
     m_NumColorKeys: 5
     m_NumAlphaKeys: 2
-  isGrounded: 0
 --- !u!50 &1921047355
 Rigidbody2D:
   serializedVersion: 5
@@ -2091,7 +2095,7 @@ Rigidbody2D:
   m_Mass: 1
   m_LinearDamping: 0
   m_AngularDamping: 0.05
-  m_GravityScale: 1
+  m_GravityScale: 3.5
   m_Material: {fileID: 0}
   m_IncludeLayers:
     serializedVersion: 2
@@ -2216,7 +2220,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1921047351}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 62899f850307741f2a39c98a8b639597, type: 3}
   m_Name: 
@@ -2334,47 +2338,71 @@ MonoBehaviour:
       m_Calls: []
     m_ActionId: 9caa3d8a-6b2f-4e8e-8bad-6ede561bd9be
     m_ActionName: UI/TrackedDeviceOrientation
-  - m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 1921047353}
-        m_TargetAssemblyTypeName: PlayerController, Assembly-CSharp
-        m_MethodName: OnMove
-        m_Mode: 0
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-    m_ActionId: 2ad76938-be81-44a6-bf08-397437e691d7
-    m_ActionName: 'PlayerInputActions/Move[/XInputControllerWindows/leftStick,/Keyboard/w,/Keyboard/upArrow,/Keyboard/s,/Keyboard/downArrow,/Keyboard/a,/Keyboard/leftArrow,/Keyboard/d,/Keyboard/rightArrow]'
-  - m_PersistentCalls:
-      m_Calls: []
-    m_ActionId: e170e984-00d0-4154-a5cc-a32b6534bddd
-    m_ActionName: 'PlayerInputActions/Crouch[/Keyboard/s]'
-  - m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 1921047353}
-        m_TargetAssemblyTypeName: PlayerController, Assembly-CSharp
-        m_MethodName: OnJump
-        m_Mode: 0
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-    m_ActionId: e036265b-c71c-467f-a27f-390d6c5f7c2d
-    m_ActionName: 'PlayerInputActions/Jump[/Keyboard/space,/XInputControllerWindows/buttonSouth]'
   m_NeverAutoSwitchControlSchemes: 0
   m_DefaultControlScheme: 
-  m_DefaultActionMap: PlayerInputActions
+  m_DefaultActionMap: 
   m_SplitScreenIndex: -1
   m_Camera: {fileID: 519420031}
+--- !u!114 &1921047359
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1921047351}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 19581a6fafbe287499084573ae5e40ba, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TumiDragController
+  moveSpeed: 10
+  groundCheck: {fileID: 471497140}
+  groundCheckRadius: 0.3
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 64
+  isGrounded: 0
+  minJumpForce: 10
+  maxJumpForce: 26
+  jumpForwardForce: 14
+  maxDragDistance: 3
+  trajectoryDotPrefab: {fileID: 1843257253224819756, guid: 3ef3f55c88efe5641ab91e6d075b3313, type: 3}
+  trajectoryDotCount: 36
+  trajectoryTimeStep: 0.05
+  playerSprite: {fileID: 1921047356}
+  facingDirection: 1
+  chargeBar: {fileID: 305718094}
+  chargeBarHandle: {fileID: 1706478880}
+  chargeColor:
+    serializedVersion: 2
+    key0: {r: 1, g: 1, b: 1, a: 1}
+    key1: {r: 1, g: 1, b: 1, a: 1}
+    key2: {r: 0, g: 0, b: 0, a: 0}
+    key3: {r: 0, g: 0, b: 0, a: 0}
+    key4: {r: 0, g: 0, b: 0, a: 0}
+    key5: {r: 0, g: 0, b: 0, a: 0}
+    key6: {r: 0, g: 0, b: 0, a: 0}
+    key7: {r: 0, g: 0, b: 0, a: 0}
+    ctime0: 0
+    ctime1: 65535
+    ctime2: 0
+    ctime3: 0
+    ctime4: 0
+    ctime5: 0
+    ctime6: 0
+    ctime7: 0
+    atime0: 0
+    atime1: 65535
+    atime2: 0
+    atime3: 0
+    atime4: 0
+    atime5: 0
+    atime6: 0
+    atime7: 0
+    m_Mode: 0
+    m_ColorSpace: -1
+    m_NumColorKeys: 2
+    m_NumAlphaKeys: 2
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
