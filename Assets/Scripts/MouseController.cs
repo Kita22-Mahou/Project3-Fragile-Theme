@@ -18,11 +18,11 @@ public class MouseController : MonoBehaviour
     private float moveInputX;
 
     [Header("Ground Check")]
-    [SerializeField] private Transform groundCheck;
-    [SerializeField] private Vector2 groundCheckSize = new Vector2(0.5f, 0.2f);
-    [SerializeField] private float groundCheckRadius = 0.3f;
-    [SerializeField] private LayerMask groundLayer;
-    [SerializeField] private bool isGrounded;
+    [SerializeField] public Transform groundCheck;
+    [SerializeField] public Vector2 groundCheckSize = new Vector2(0.5f, 0.2f);
+    [SerializeField] public float groundCheckRadius = 0.3f;
+    [SerializeField] public LayerMask groundLayer;
+    [SerializeField] public bool isGrounded;
 
     [Header("Jump")]
     [SerializeField] private float minJumpForce = 10f;
