@@ -67,10 +67,10 @@ public class HealthPoint1 : MonoBehaviour
             return;
 
         // ตรวจสอบ Layer ที่ไม่คิดดาเมจ
-        int otherLayer = collision.gameObject.layer;
+        //int otherLayer = collision.gameObject.layer;
 
-        if ((ignoreDamageLayers.value & (1 << otherLayer)) != 0)
-            return;
+        //if ((ignoreDamageLayers.value & (1 << otherLayer)) != 0)
+        //    return;
 
         bool hitFloor = false;
         bool hitCeiling = false;
