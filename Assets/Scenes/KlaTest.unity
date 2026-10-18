@@ -1245,7 +1245,7 @@ GameObject:
   - component: {fileID: 1633886853}
   - component: {fileID: 1633886852}
   - component: {fileID: 1633886851}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Layout
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -10864,6 +10864,7 @@ MonoBehaviour:
     m_ColorSpace: -1
     m_NumColorKeys: 5
     m_NumAlphaKeys: 2
+  movementLocked: 0
 --- !u!61 &1683509414
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -11071,19 +11072,28 @@ MonoBehaviour:
   m_GameObject: {fileID: 1683509411}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ebc4e778ace689c4fa7b5c0ca4c39269, type: 3}
+  m_Script: {fileID: 11500000, guid: bb437c0b9e1ec2244ab504c5478808a3, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ShellDefense
-  maxShellUses: 120
-  protectionDuration: 0.65
-  bounceMultiplier: 1.2
-  minimumBounceSpeed: 27
-  maximumBounceSpeed: 35
-  minimumUpwardRatio: 0.65
-  controlLockDuration: 0.12
+  m_EditorClassIdentifier: Assembly-CSharp::ShellWallBounce
+  maxShellUses: 30
   shellUseIcons:
-  - {fileID: 1974971860}
-  - {fileID: 1521626490}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  protectionDuration: 0.75
+  horizontalBounceMultiplier: 1.6
+  minimumHorizontalBounceSpeed: 12
+  upwardBounceHeight: 6
+  upwardBounceMultiplier: 1.1
+  minimumBounceSpeed: 30
+  maximumBounceSpeed: 40
+  wallNormalThreshold: 0.7
+  bounceableLayers:
+    serializedVersion: 2
+    m_Bits: 320
+  minimumWallImpactSpeed: 2.35
+  controlLockDuration: 0.12
+  maxControlLockDuration: 2
 --- !u!1 &1780956371
 GameObject:
   m_ObjectHideFlags: 0

@@ -57,6 +57,8 @@ public class MouseController : MonoBehaviour
     private Collider2D playerCollider;
     private Camera mainCamera;
 
+    [HideInInspector] public bool movementLocked;
+
     #region Event System
     private void Awake()
     {
@@ -110,6 +112,22 @@ public class MouseController : MonoBehaviour
             CancelJumpCharge();
         }
 
+        if (movementLocked)
+        {
+            moveInputX = 0f;
+
+            // ไม่รับคำสั่งเล็งหรือกระโดดขณะ Shell ล็อกการควบคุม
+            if (jumpState == JumpState.Aiming)
+            {
+                jumpState = JumpState.Grounded;
+                jumpChargeTime = 0f;
+                ResetPowerBar();
+            }
+
+            HideJumpTrajectory();
+            return;
+        }
+
         // ชาร์จกระโดด
         if (jumpState == JumpState.Aiming)
         {
@@ -144,6 +162,9 @@ public class MouseController : MonoBehaviour
     #region Walk Mechanic
     private void Move()
     {
+        if (movementLocked)
+            return;
+
         if (jumpState == JumpState.Jumping)
             return;
 
@@ -424,6 +445,20 @@ public class MouseController : MonoBehaviour
         ResetPowerBar();
         HideJumpTrajectory();
     }
+    public void NotifyExternalBounce()
+    {
+        // ถือว่าเป็นการกระโดดจากแรงภายนอก
+        jumpState = JumpState.Jumping;
+        hasLeftGround = false;
+
+        moveInputX = 0f;
+
+        // ซ่อนวิถีเล็งและรีเซ็ตการชาร์จเดิม
+        jumpChargeTime = 0f;
+        ResetPowerBar();
+        HideJumpTrajectory();
+    }
+
     #endregion
 
     private void OnDrawGizmosSelected()
