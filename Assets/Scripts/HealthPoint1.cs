@@ -20,8 +20,8 @@ public class HealthPoint1 : MonoBehaviour
     [Header("Shell HP UI")]
     [Tooltip("เรียงจากกระดองบน กลาง และล่าง")]
     [SerializeField] private Image[] shellGrayOverlays = new Image[3];
-    private ShellDefense shellDefense;
 
+    private ShellWallBounce shellWallBounce;
     private Rigidbody2D rb;
     private bool isDead;
 
@@ -30,11 +30,10 @@ public class HealthPoint1 : MonoBehaviour
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
-        shellDefense = GetComponent<ShellDefense>();
+        shellWallBounce = GetComponent<ShellWallBounce>();
 
         maxHP = Mathf.Max(1f, maxHP);
-        currentHP = maxHP;
-        currentHP = Mathf.Clamp(currentHP, 0f, maxHP);
+        currentHP = Mathf.Clamp(maxHP, 0f, maxHP);
 
         SetupShellUI();
         UpdateShellUI();
@@ -50,11 +49,9 @@ public class HealthPoint1 : MonoBehaviour
             if (overlay == null)
                 continue;
 
-            // ให้ภาพสีเทาเติมจากด้านบนลงด้านล่าง
             overlay.type = Image.Type.Filled;
             overlay.fillMethod = Image.FillMethod.Vertical;
             overlay.fillOrigin = (int)Image.OriginVertical.Top;
-
             overlay.color = Color.gray;
             overlay.fillAmount = 0f;
             overlay.raycastTarget = false;
@@ -66,7 +63,7 @@ public class HealthPoint1 : MonoBehaviour
         if (isDead)
             return;
 
-        // ตรวจสอบ Layer ที่ไม่คิดดาเมจ
+        // ยกเว้น Layer ที่ไม่ต้องการคิดดาเมจ
         int otherLayer = collision.gameObject.layer;
 
         if ((ignoreDamageLayers.value & (1 << otherLayer)) != 0)
@@ -123,13 +120,6 @@ public class HealthPoint1 : MonoBehaviour
         );
 
         TakeDamage(damage);
-
-        Debug.Log(
-            $"Collision: Floor={hitFloor}, Ceiling={hitCeiling}, Wall={hitWall}" +
-            $" | Velocity={impactVelocity}" +
-            $" | Impact Speed={impactSpeed:F2}" +
-            $" | Damage={damage:F1}"
-        );
     }
 
     public void TakeDamage(float damage)
@@ -137,9 +127,10 @@ public class HealthPoint1 : MonoBehaviour
         if (isDead || damage <= 0f)
             return;
 
-        //กำลังอยู่ในกระดองหรือไม่
-        if (shellDefense != null &&
-            shellDefense.TryBlockDamage())
+        // ตรวจสอบ ShellWallBounce ก่อนหัก HP
+        // หากกำลังป้องกันอยู่ จะไม่เสียเลือด
+        if (shellWallBounce != null &&
+            shellWallBounce.TryBlockDamage())
         {
             return;
         }
@@ -151,10 +142,6 @@ public class HealthPoint1 : MonoBehaviour
         );
 
         UpdateShellUI();
-
-        Debug.Log(
-            $"Damage: {damage:F1} | HP: {currentHP:F1}/{maxHP:F1}"
-        );
 
         if (currentHP <= 0f)
             Die();
@@ -182,10 +169,7 @@ public class HealthPoint1 : MonoBehaviour
             return;
         }
 
-        // แบ่ง HP เท่า ๆ กันตามจำนวนกระดอง
         float hpPerShell = maxHP / shellGrayOverlays.Length;
-
-        // HP ที่หายไปทั้งหมด
         float lostHP = maxHP - currentHP;
 
         for (int i = 0; i < shellGrayOverlays.Length; i++)
@@ -195,14 +179,12 @@ public class HealthPoint1 : MonoBehaviour
             if (overlay == null)
                 continue;
 
-            // กระดองลำดับ 0 คือด้านบน
             float lostInThisShell = Mathf.Clamp(
                 lostHP - (i * hpPerShell),
                 0f,
                 hpPerShell
             );
 
-            // เติมสีเทาจากด้านบนลงด้านล่าง
             overlay.fillAmount = hpPerShell > 0f
                 ? lostInThisShell / hpPerShell
                 : 0f;
@@ -212,6 +194,5 @@ public class HealthPoint1 : MonoBehaviour
     private void Die()
     {
         isDead = true;
-        Debug.Log("Tumi กระดองแตก! HP หมดแล้ว");
     }
 }
