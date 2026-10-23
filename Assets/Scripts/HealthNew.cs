@@ -346,5 +346,6 @@ public class HealthNew : MonoBehaviour
         isDead = true;
         currentSlices = 0;
         UpdatePizzaUI();
+        Checkpoint.RespawnPlayer(transform);
     }
 }
