@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using System.Collections.Generic;
 
 public class MouseController : MonoBehaviour
 {
@@ -18,6 +19,10 @@ public class MouseController : MonoBehaviour
     [SerializeField] private float moveSpeed = 10f;
 
     private float moveInputX;
+    private float SlowMoveSpeedMultiplier = 1f;
+    private float SlowJumpSpeedMultiplier = 1f;
+
+    private readonly HashSet<SlowObstacle> activeSlowObstacle = new HashSet<SlowObstacle>();
 
     // GROUND CHECK
     [Header("Ground Check")]
@@ -251,7 +256,7 @@ public class MouseController : MonoBehaviour
         }
 
         // การเดินปกติบนพื้น
-        rb.linearVelocity = new Vector2(moveInputX * moveSpeed, rb.linearVelocity.y);
+        rb.linearVelocity = new Vector2(moveInputX * moveSpeed * SlowMoveSpeedMultiplier, rb.linearVelocity.y);
     }
 
 
@@ -435,7 +440,7 @@ public class MouseController : MonoBehaviour
     private float GetLaunchSpeed()
     {
         float jumpForce = Mathf.Lerp(minJumpForce, maxJumpForce, GetChargePercent());
-        return new Vector2(jumpForwardForce, jumpForce).magnitude;
+        return new Vector2(jumpForwardForce, jumpForce).magnitude * SlowJumpSpeedMultiplier;
     }
 
 
@@ -497,6 +502,55 @@ public class MouseController : MonoBehaviour
 
     #endregion
 
+    #region Slow
+    public void EnterSlowObstacle(SlowObstacle obstacle)
+    {
+        if (obstacle == null)
+        {
+            return;
+        }
+
+        activeSlowObstacle.Add(obstacle);
+        RefreshStickyModifiers();
+    }
+
+    public void ExitSlowObstacle(SlowObstacle obstacle)
+    {
+        if (obstacle == null)
+        {
+            return;
+        }
+
+        activeSlowObstacle.Remove(obstacle);
+        RefreshStickyModifiers();
+    }
+
+    private void RefreshStickyModifiers()
+    {
+        SlowMoveSpeedMultiplier = 1f;
+        SlowJumpSpeedMultiplier = 1f;
+
+        // หากอยู่ในพื้นที่หนืดซ้อนกัน ใช้ค่าที่ช้าที่สุด
+        foreach (SlowObstacle obstacle in activeSlowObstacle)
+        {
+            if (obstacle == null)
+            {
+                continue;
+            }
+
+            SlowMoveSpeedMultiplier = Mathf.Min(
+                SlowMoveSpeedMultiplier,
+                obstacle.MovementMultiplier
+            );
+
+            SlowJumpSpeedMultiplier = Mathf.Min(
+                SlowJumpSpeedMultiplier,
+                obstacle.JumpMultiplier
+            );
+        }
+    }
+
+#endregion
     #region Power UI
     private void UpdatePowerBar()
     {
@@ -670,6 +724,31 @@ public class MouseController : MonoBehaviour
         Gizmos.color = Color.red;
         Gizmos.DrawWireCube(groundCheck.position, groundCheckSize);
     }
+    public void ResetAfterRespawn()
+    {
+        jumpState = JumpState.Grounded;
+        jumpChargeTime = 0f;
+        hasLeftGround = false;
+        airJumpAvailable = true;
+        isSlowingFall = false;
 
+        stopBeforeLaunch = false;
+        launchOnNextFixedUpdate = false;
+        pendingLaunchVelocity = Vector2.zero;
+
+        moveInputX = 0f;
+        movementLocked = false;
+        aimDirection = GetDefaultAimDirection();
+
+        if (rb != null)
+        {
+            rb.linearVelocity = Vector2.zero;
+            rb.angularVelocity = 0f;
+        }
+
+        CheckGround();
+        ResetPowerBar();
+        HideJumpTrajectory();
+    }
     #endregion
 }

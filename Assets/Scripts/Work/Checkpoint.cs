@@ -58,7 +58,7 @@ public class Checkpoint : MonoBehaviour
         HasCheckpoint = true;
 
         // อัปเดตสีธงทุกอันในฉาก
-        Checkpoint[] allFlags = FindObjectsByType<Checkpoint>(FindObjectsSortMode.None);
+        Checkpoint[] allFlags = Object.FindObjectsByType<Checkpoint>(FindObjectsInactive.Exclude);
 
         foreach (Checkpoint flag in allFlags)
         {
@@ -97,11 +97,21 @@ public class Checkpoint : MonoBehaviour
 
         player.position = checkpointPosition;
 
-        // หากมีเมธอดนี้ใน Player จะเรียกเพื่อรีเซ็ตสถานะการควบคุม
-        player.gameObject.SendMessage(
-            "ResetAfterRespawn",
-            SendMessageOptions.DontRequireReceiver
-        );
+        HealthNew health = player.GetComponent<HealthNew>();
+
+        if (health != null)
+        {
+            health.ResetAfterRespawn();
+        }
+        else
+        {
+            MouseController controller = player.GetComponent<MouseController>();
+
+            if (controller != null)
+            {
+                controller.ResetAfterRespawn();
+            }
+        }
 
         Physics2D.SyncTransforms();
 

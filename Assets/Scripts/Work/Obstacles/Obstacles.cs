@@ -18,10 +18,10 @@ public class Obstacles : MonoBehaviour
 
     private void DealDamage(Collider2D other)
     {
-        TumiHealth health = other.GetComponent<TumiHealth>();
+        HealthNew health = other.GetComponent<HealthNew>();
 
         if (health == null)
-            health = other.GetComponentInParent<TumiHealth>();
+            health = other.GetComponentInParent<HealthNew>();
 
         if (health != null)
         {
