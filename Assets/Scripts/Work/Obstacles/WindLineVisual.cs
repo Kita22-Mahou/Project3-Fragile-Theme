@@ -2,19 +2,11 @@ using UnityEngine;
 
 public class WindLineVisual : MonoBehaviour
 {
-    // =========================================================
-    // REFERENCES
-    // =========================================================
-
     [Header("References")]
 
     [SerializeField] private WindZone windZone;
     [SerializeField] private BoxCollider2D windCollider;
 
-
-    // =========================================================
-    // WIND WAVE SETTINGS
-    // =========================================================
 
     [Header("Wind Waves")]
 
@@ -37,11 +29,6 @@ public class WindLineVisual : MonoBehaviour
     [Tooltip("ความเอียงของเส้น")]
     [SerializeField] private float diagonalHeight = 0.2f;
 
-
-    // =========================================================
-    // APPEARANCE
-    // =========================================================
-
     [Header("Chalk Appearance")]
 
     [SerializeField] private Color chalkColor = new Color(0.78f, 0.88f, 0.96f, 1f);
@@ -54,19 +41,9 @@ public class WindLineVisual : MonoBehaviour
 
     [SerializeField] private int sortingOrder = 20;
 
-
-    // =========================================================
-    // FADE
-    // =========================================================
-
     [Header("Fade")]
 
     [SerializeField] private float fadeSpeed = 4f;
-
-
-    // =========================================================
-    // INTERNAL DATA
-    // =========================================================
 
     private class WindWave
     {
@@ -84,11 +61,6 @@ public class WindLineVisual : MonoBehaviour
     private Material lineMaterial;
     private float currentAlpha = 1f;
     private bool initialized;
-
-
-    // =========================================================
-    // INITIALIZE
-    // =========================================================
 
     private void OnValidate()
     {
@@ -130,11 +102,6 @@ public class WindLineVisual : MonoBehaviour
         initialized = true;
     }
 
-
-    // =========================================================
-    // MATERIAL
-    // =========================================================
-
     private void CreateMaterial()
     {
         Shader shader = Shader.Find("Sprites/Default");
@@ -144,11 +111,6 @@ public class WindLineVisual : MonoBehaviour
             lineMaterial = new Material(shader);
         }
     }
-
-
-    // =========================================================
-    // CREATE LINES
-    // =========================================================
 
     private void CreateWindWaves()
     {
@@ -207,11 +169,6 @@ public class WindLineVisual : MonoBehaviour
         return line;
     }
 
-
-    // =========================================================
-    // UPDATE
-    // =========================================================
-
     private void Update()
     {
         if (!initialized)
@@ -225,11 +182,6 @@ public class WindLineVisual : MonoBehaviour
 
         UpdateWindWaves();
     }
-
-
-    // =========================================================
-    // DRAW WAVY LINES
-    // =========================================================
 
     private void UpdateWindWaves()
     {
@@ -318,10 +270,7 @@ public class WindLineVisual : MonoBehaviour
         return transform.position.z;
     }
 
-
-    // =========================================================
     // CLEANUP
-    // =========================================================
 
     private void OnDestroy()
     {
