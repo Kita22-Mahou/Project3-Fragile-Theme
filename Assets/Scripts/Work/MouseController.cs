@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
+using UnityEngine.SocialPlatforms;
 
 public class MouseController : MonoBehaviour
 {
@@ -39,8 +40,13 @@ public class MouseController : MonoBehaviour
     [SerializeField] private float maxChargeTime = 0.7f;
     [SerializeField] private float jumpForwardForce = 14f;
 
+    private float AirAimingMaxChargeTime;
+    private float NormalMaxChargeTime;
+
     private float jumpChargeTime;
     private bool hasLeftGround;
+
+
     [Header("Air Double Jump")]
     [Tooltip("เปิดหรือปิดการกระโดดครั้งที่สองกลางอากาศ")]
     [SerializeField] private bool enableAirDoubleJump = true;
@@ -96,7 +102,11 @@ public class MouseController : MonoBehaviour
 
     private void Awake()
     {
+
         rb = GetComponent<Rigidbody2D>();
+
+        AirAimingMaxChargeTime = maxChargeTime / 2;
+        NormalMaxChargeTime = maxChargeTime;
 
         if (rb == null)
         {
@@ -126,6 +136,18 @@ public class MouseController : MonoBehaviour
 
         CheckGround();
         UpdateJumpState();
+
+        if (jumpState == JumpState.AirAiming)
+        {
+            Time.timeScale = 0.5f;
+            maxChargeTime = AirAimingMaxChargeTime;
+        }
+        else if (jumpState != JumpState.AirAiming)
+        {
+            Time.timeScale = 1;
+            maxChargeTime = NormalMaxChargeTime;
+
+        }
 
         if (jumpState == JumpState.Grounded)
         {
@@ -229,6 +251,7 @@ public class MouseController : MonoBehaviour
 
     private void Move()
     {
+
         if (movementLocked)
         {
             return;
@@ -237,14 +260,16 @@ public class MouseController : MonoBehaviour
         // ระหว่างพุ่ง ให้ฟิสิกส์ทำงานตามปกติ
         if (jumpState == JumpState.Jumping)
         {
-            ApplySlowFall();
+            maxChargeTime = NormalMaxChargeTime;
+            //ApplySlowFall();
             return;
         }
 
         // ระหว่างเล็ง Air Jump ไม่ล็อกแนวนอน
         if (jumpState == JumpState.AirAiming)
         {
-            ApplySlowFall();
+            maxChargeTime = AirAimingMaxChargeTime;
+            //ApplySlowFall();
             return;
         }
 
@@ -261,21 +286,21 @@ public class MouseController : MonoBehaviour
 
 
     // ชะลอเฉพาะความเร็วตกแกน Y
-    private void ApplySlowFall()
-    {
-        if (!isSlowingFall || rb.linearVelocity.y >= 0f)
-        {
-            return;
-        }
+    //private void ApplySlowFall()
+    //{
+    //    if (!isSlowingFall || rb.linearVelocity.y >= 0f)
+    //    {
+    //        return;
+    //    }
 
-        float maxFallSpeed = Mathf.Max(0f, slowFallSpeed);
+    //    float maxFallSpeed = Mathf.Max(0f, slowFallSpeed);
 
-        // จำกัดความเร็วตก โดยไม่เปลี่ยนความเร็วแกน X
-        if (rb.linearVelocity.y < -maxFallSpeed)
-        {
-            rb.linearVelocity = new Vector2(rb.linearVelocity.x, -maxFallSpeed);
-        }
-    }
+    //    // จำกัดความเร็วตก โดยไม่เปลี่ยนความเร็วแกน X
+    //    if (rb.linearVelocity.y < -maxFallSpeed)
+    //    {
+    //        rb.linearVelocity = new Vector2(rb.linearVelocity.x, -maxFallSpeed);
+    //    }
+    //}
 
 
     private void UpdateFacingDirection()
