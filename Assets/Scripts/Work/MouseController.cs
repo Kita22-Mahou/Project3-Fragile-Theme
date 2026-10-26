@@ -1,7 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
-using UnityEngine.SocialPlatforms;
 
 public class MouseController : MonoBehaviour
 {
@@ -17,6 +16,8 @@ public class MouseController : MonoBehaviour
 
     // MOVEMENT
     [Header("Movement")]
+    [Tooltip("เปิดหรือปิดการเดินซ้าย-ขวา")]
+    [SerializeField] private bool enableHorizontalMovement = true;
     [SerializeField] private float moveSpeed = 10f;
 
     private float moveInputX;
@@ -42,40 +43,43 @@ public class MouseController : MonoBehaviour
 
     private float AirAimingMaxChargeTime;
     private float NormalMaxChargeTime;
-
     private float jumpChargeTime;
     private bool hasLeftGround;
 
+    // จำว่าการชาร์จพื้นเริ่มจากตอนยืนบนพื้นเท่านั้น
+    private bool groundJumpStartedOnGround;
 
+    // AIR DOUBLE JUMP
     [Header("Air Double Jump")]
     [Tooltip("เปิดหรือปิดการกระโดดครั้งที่สองกลางอากาศ")]
     [SerializeField] private bool enableAirDoubleJump = true;
 
     private bool airJumpAvailable = true;
 
+    // SLOW FALL
     [Header("Slow Fall")]
     [Tooltip("เปิดหรือปิดระบบชะลอการตกด้วยคลิกขวา")]
     [SerializeField] private bool enableSlowFall = true;
-
-    [Tooltip("ความเร็วตกสูงสุดขณะกดคลิกขวากลางอากาศ")]
     [SerializeField] private float slowFallSpeed = 2f;
 
     private bool isSlowingFall;
 
+    // LAUNCH SETTINGS
     [Header("Launch Settings")]
-    [Tooltip("หยุดความเร็วก่อนพุ่ง 1 จังหวะฟิสิกส์")]
     [SerializeField] private bool stopBeforeJump = true;
 
     private bool stopBeforeLaunch;
     private bool launchOnNextFixedUpdate;
     private Vector2 pendingLaunchVelocity;
 
+    // MOUSE AIM
     [Header("Mouse Aim")]
     [SerializeField] private float minAimAngle = 15f;
     [SerializeField] private float maxAimAngle = 165f;
 
     private Vector2 aimDirection;
 
+    // JUMP TRAJECTORY
     [Header("Jump Trajectory")]
     [SerializeField] private GameObject trajectoryPoint;
     [SerializeField] private GameObject trajectoryDotPrefab;
@@ -84,14 +88,26 @@ public class MouseController : MonoBehaviour
 
     private Transform[] trajectoryDots;
 
+    // FLIP
     [Header("Flip")]
     [SerializeField] private SpriteRenderer playerSprite;
     public float facingDirection = 1f;
 
+    // POWER UI
     [Header("Power UI")]
     [SerializeField] private Scrollbar chargeBar;
     [SerializeField] private Image chargeBarHandle;
     [SerializeField] private Gradient chargeColor;
+
+    [Header("Slippery Surface")]
+    [SerializeField] private float slipperyFrictionThreshold = 0.15f;
+    [SerializeField] private float slipperyAcceleration = 18f;
+    [SerializeField] private float slipperyDeceleration = 2f;
+    [SerializeField] private float maxSlipperySpeed = 14f;
+    [SerializeField] private float slopeNormalYThreshold = 0.98f;
+
+    private Collider2D currentGroundCollider;
+    private Vector2 groundSurfaceNormal = Vector2.up;
 
     [HideInInspector]
     public bool movementLocked;
@@ -102,11 +118,7 @@ public class MouseController : MonoBehaviour
 
     private void Awake()
     {
-
         rb = GetComponent<Rigidbody2D>();
-
-        AirAimingMaxChargeTime = maxChargeTime / 2;
-        NormalMaxChargeTime = maxChargeTime;
 
         if (rb == null)
         {
@@ -122,6 +134,9 @@ public class MouseController : MonoBehaviour
             playerCollider = GetComponentInChildren<Collider2D>();
         }
 
+        AirAimingMaxChargeTime = maxChargeTime / 2f;
+        NormalMaxChargeTime = maxChargeTime;
+
         mainCamera = Camera.main;
         aimDirection = GetDefaultAimDirection();
 
@@ -132,7 +147,9 @@ public class MouseController : MonoBehaviour
 
     private void Update()
     {
-        moveInputX = Input.GetAxisRaw("Horizontal");
+        moveInputX = enableHorizontalMovement
+            ? Input.GetAxisRaw("Horizontal")
+            : 0f;
 
         CheckGround();
         UpdateJumpState();
@@ -142,11 +159,10 @@ public class MouseController : MonoBehaviour
             Time.timeScale = 0.5f;
             maxChargeTime = AirAimingMaxChargeTime;
         }
-        else if (jumpState != JumpState.AirAiming)
+        else
         {
-            Time.timeScale = 1;
+            Time.timeScale = 1f;
             maxChargeTime = NormalMaxChargeTime;
-
         }
 
         if (jumpState == JumpState.Grounded)
@@ -154,7 +170,7 @@ public class MouseController : MonoBehaviour
             UpdateFacingDirection();
         }
 
-        // ล็อกการควบคุมจาก ShellWallBounce
+        // หยุดควบคุมเมื่อระบบอื่นล็อกผู้เล่น
         if (movementLocked)
         {
             moveInputX = 0f;
@@ -173,44 +189,59 @@ public class MouseController : MonoBehaviour
             return;
         }
 
-
-        // คลิกขวากลางอากาศเพื่อเริ่มเล็ง Air Jump
-        if (
-            Input.GetMouseButtonDown(1) &&
-            enableAirDoubleJump &&
-            !isGrounded &&
-            airJumpAvailable &&
-            jumpState == JumpState.Jumping)
+        // AIR DOUBLE JUMP
+        // คลิกขวาเริ่มชาร์จกระโดดครั้งที่สองได้ขณะลอยอยู่
+        // ไม่จำเป็นต้องกระโดดครั้งแรกสำเร็จก่อน
+        if (Input.GetMouseButtonDown(1)
+            && enableAirDoubleJump
+            && !isGrounded
+            && airJumpAvailable
+            && jumpState == JumpState.Jumping)
         {
             BeginAirAim();
         }
 
-
-        // คลิกขวาค้างเพื่อชะลอการตก
+        // ตรวจการกดคลิกขวาค้างกลางอากาศ
         isSlowingFall =
             enableSlowFall &&
             Input.GetMouseButton(1) &&
             !isGrounded &&
-            (jumpState == JumpState.Jumping || jumpState == JumpState.AirAiming);
+            (jumpState == JumpState.Jumping ||
+             jumpState == JumpState.AirAiming);
 
-
-        // คลิกซ้ายเพื่อเริ่มเล็งกระโดดจากพื้น
-        if (Input.GetMouseButtonDown(0) && isGrounded && jumpState == JumpState.Grounded)
+        // เริ่มชาร์จกระโดดจากพื้นด้วยคลิกซ้าย
+        if (Input.GetMouseButtonDown(0)
+            && isGrounded
+            && jumpState == JumpState.Grounded)
         {
             BeginGroundAim();
         }
 
-
-        // เล็งและชาร์จกระโดด
-        if (jumpState == JumpState.Aiming || jumpState == JumpState.AirAiming)
+        // จัดการการชาร์จกระโดดจากพื้นและ Air Double Jump
+        if (jumpState == JumpState.Aiming ||
+            jumpState == JumpState.AirAiming)
         {
             bool isAirAiming = jumpState == JumpState.AirAiming;
-            bool isCharging = isAirAiming ? Input.GetMouseButton(1) : Input.GetMouseButton(0);
 
-            if (isCharging)
+            bool isCharging = isAirAiming
+                ? Input.GetMouseButton(1)
+                : Input.GetMouseButton(0);
+
+            // สำคัญ: ถ้าเป็นการชาร์จจากพื้น ต้องยังอยู่บนพื้น
+            // หากพื้นหายไป UpdateJumpState จะยกเลิกการชาร์จแล้ว
+            if (!isAirAiming &&
+                (!groundJumpStartedOnGround || !isGrounded))
+            {
+                CancelJumpCharge();
+            }
+            else if (isCharging)
             {
                 jumpChargeTime += Time.deltaTime;
-                jumpChargeTime = Mathf.Clamp(jumpChargeTime, 0f, maxChargeTime);
+                jumpChargeTime = Mathf.Clamp(
+                    jumpChargeTime,
+                    0f,
+                    maxChargeTime
+                );
 
                 UpdateAimFromMouse();
                 UpdatePowerBar();
@@ -251,57 +282,104 @@ public class MouseController : MonoBehaviour
 
     private void Move()
     {
-
         if (movementLocked)
         {
             return;
         }
 
-        // ระหว่างพุ่ง ให้ฟิสิกส์ทำงานตามปกติ
         if (jumpState == JumpState.Jumping)
         {
             maxChargeTime = NormalMaxChargeTime;
-            //ApplySlowFall();
             return;
         }
 
-        // ระหว่างเล็ง Air Jump ไม่ล็อกแนวนอน
         if (jumpState == JumpState.AirAiming)
         {
             maxChargeTime = AirAimingMaxChargeTime;
-            //ApplySlowFall();
             return;
         }
 
-        // หยุดการเดินระหว่างเล็งกระโดดจากพื้น
+        // พื้นลื่นต้องทำงานก่อนตรวจสถานะเล็ง
+        // เพื่อไม่ให้การเล็งสั่งหยุดความเร็วแนวนอน
+        if (isGrounded && IsOnSlipperySurface())
+        {
+            MoveOnSlipperySurface(jumpState != JumpState.Aiming);
+            return;
+        }
+
+        // พื้นปกติยังหยุดเดินระหว่างเล็ง
         if (jumpState == JumpState.Aiming)
         {
             rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
             return;
         }
 
-        // การเดินปกติบนพื้น
-        rb.linearVelocity = new Vector2(moveInputX * moveSpeed * SlowMoveSpeedMultiplier, rb.linearVelocity.y);
+        // การเดินปกติ
+        rb.linearVelocity = new Vector2(
+            moveInputX * moveSpeed * SlowMoveSpeedMultiplier,
+            rb.linearVelocity.y
+        );
     }
 
+    private bool IsOnSlipperySurface()
+    {
+        if (currentGroundCollider == null)
+        {
+            return false;
+        }
 
-    // ชะลอเฉพาะความเร็วตกแกน Y
-    //private void ApplySlowFall()
-    //{
-    //    if (!isSlowingFall || rb.linearVelocity.y >= 0f)
-    //    {
-    //        return;
-    //    }
+        PhysicsMaterial2D material = currentGroundCollider.sharedMaterial;
 
-    //    float maxFallSpeed = Mathf.Max(0f, slowFallSpeed);
+        if (material == null && currentGroundCollider.attachedRigidbody != null)
+        {
+            material = currentGroundCollider.attachedRigidbody.sharedMaterial;
+        }
 
-    //    // จำกัดความเร็วตก โดยไม่เปลี่ยนความเร็วแกน X
-    //    if (rb.linearVelocity.y < -maxFallSpeed)
-    //    {
-    //        rb.linearVelocity = new Vector2(rb.linearVelocity.x, -maxFallSpeed);
-    //    }
-    //}
+        return material != null &&
+               material.friction <= slipperyFrictionThreshold;
+    }
 
+    private void MoveOnSlipperySurface(bool allowInput = true)
+    {
+        float deltaTime = Time.fixedDeltaTime;
+        float velocityX = rb.linearVelocity.x;
+
+        float maxSpeed = Mathf.Max(
+            0.1f,
+            maxSlipperySpeed * SlowMoveSpeedMultiplier
+        );
+
+        // เร่งความเร็วด้วยปุ่มเดินเฉพาะตอนที่อนุญาต
+        if (allowInput && Mathf.Abs(moveInputX) > 0.01f)
+        {
+            velocityX += moveInputX
+                       * slipperyAcceleration
+                       * SlowMoveSpeedMultiplier
+                       * deltaTime;
+
+            velocityX = Mathf.Clamp(
+                velocityX,
+                -maxSpeed,
+                maxSpeed
+            );
+        }
+        // พื้นราบจะค่อย ๆ ชะลอ แต่ไม่หยุดทันที
+        else if (groundSurfaceNormal.y >= slopeNormalYThreshold)
+        {
+            velocityX = Mathf.MoveTowards(
+                velocityX,
+                0f,
+                slipperyDeceleration * deltaTime
+            );
+        }
+
+        // อย่าตั้งความเร็ว X เป็นศูนย์ตอนเล็ง
+        // ปล่อยให้ฟิสิกส์จัดการการเคลื่อนที่บนพื้นเอียง
+        rb.linearVelocity = new Vector2(
+            velocityX,
+            rb.linearVelocity.y
+        );
+    }
 
     private void UpdateFacingDirection()
     {
@@ -325,21 +403,56 @@ public class MouseController : MonoBehaviour
         }
     }
 
-
     private void CheckGround()
     {
         if (groundCheck == null)
         {
             isGrounded = false;
+            currentGroundCollider = null;
+            groundSurfaceNormal = Vector2.up;
             return;
         }
 
-        isGrounded = Physics2D.OverlapBox(groundCheck.position, groundCheckSize, 0f, groundLayer) != null;
-    }
+        currentGroundCollider = Physics2D.OverlapBox(
+            groundCheck.position,
+            groundCheckSize,
+            0f,
+            groundLayer
+        );
 
+        isGrounded = currentGroundCollider != null;
+        groundSurfaceNormal = Vector2.up;
+
+        if (!isGrounded)
+        {
+            return;
+        }
+
+        Vector2 rayOrigin = (Vector2)groundCheck.position + Vector2.up * 0.25f;
+
+        RaycastHit2D hit = Physics2D.Raycast(
+            rayOrigin,
+            Vector2.down,
+            0.6f,
+            groundLayer
+        );
+
+        if (hit.collider != null)
+        {
+            currentGroundCollider = hit.collider;
+            groundSurfaceNormal = hit.normal;
+        }
+    }
 
     private void UpdateJumpState()
     {
+        // ถ้าพื้นหายขณะชาร์จจากพื้น ให้ยกเลิกทันที
+        if (jumpState == JumpState.Aiming && !isGrounded)
+        {
+            CancelJumpCharge();
+        }
+
+        // ตรวจการออกจากพื้นและการลงพื้น
         if (jumpState == JumpState.Jumping)
         {
             if (!isGrounded)
@@ -353,10 +466,11 @@ public class MouseController : MonoBehaviour
                 hasLeftGround = false;
                 airJumpAvailable = true;
                 isSlowingFall = false;
+                groundJumpStartedOnGround = false;
             }
         }
 
-        // หากแตะพื้นระหว่างเล็ง Air Jump ให้ยกเลิกการเล็ง
+        // ยกเลิก Air Double Jump หากกลับมาแตะพื้นระหว่างชาร์จ
         if (jumpState == JumpState.AirAiming && isGrounded)
         {
             jumpState = JumpState.Grounded;
@@ -364,6 +478,7 @@ public class MouseController : MonoBehaviour
             airJumpAvailable = true;
             isSlowingFall = false;
             jumpChargeTime = 0f;
+            groundJumpStartedOnGround = false;
 
             ResetPowerBar();
             HideJumpTrajectory();
@@ -376,6 +491,13 @@ public class MouseController : MonoBehaviour
 
     private void BeginGroundAim()
     {
+        // ห้ามเริ่มชาร์จหากไม่ได้อยู่บนพื้น
+        if (!isGrounded || jumpState != JumpState.Grounded)
+        {
+            return;
+        }
+
+        groundJumpStartedOnGround = true;
         jumpState = JumpState.Aiming;
         jumpChargeTime = 0f;
         aimDirection = GetDefaultAimDirection();
@@ -383,14 +505,18 @@ public class MouseController : MonoBehaviour
         ResetPowerBar();
     }
 
-
     private void BeginAirAim()
     {
-        if (!enableAirDoubleJump || !airJumpAvailable || isGrounded || jumpState != JumpState.Jumping)
+        // Air Double Jump ทำงานแยกจากการชาร์จกระโดดพื้น
+        if (!enableAirDoubleJump ||
+            !airJumpAvailable ||
+            isGrounded ||
+            jumpState != JumpState.Jumping)
         {
             return;
         }
 
+        groundJumpStartedOnGround = false;
         jumpState = JumpState.AirAiming;
         airJumpAvailable = false;
         jumpChargeTime = 0f;
@@ -400,7 +526,6 @@ public class MouseController : MonoBehaviour
         UpdateAimFromMouse();
         ResetPowerBar();
     }
-
 
     private void UpdateAimFromMouse()
     {
@@ -427,11 +552,14 @@ public class MouseController : MonoBehaviour
         angle = Mathf.Clamp(angle, minAimAngle, maxAimAngle);
 
         float radians = angle * Mathf.Deg2Rad;
-        aimDirection = new Vector2(Mathf.Cos(radians), Mathf.Sin(radians)).normalized;
+
+        aimDirection = new Vector2(
+            Mathf.Cos(radians),
+            Mathf.Sin(radians)
+        ).normalized;
 
         UpdateAimFacingDirection();
     }
-
 
     private void UpdateAimFacingDirection()
     {
@@ -448,35 +576,55 @@ public class MouseController : MonoBehaviour
         }
     }
 
-
     private Vector2 GetDefaultAimDirection()
     {
-        Vector2 direction = new Vector2(facingDirection * jumpForwardForce, minJumpForce);
+        Vector2 direction = new Vector2(
+            facingDirection * jumpForwardForce,
+            minJumpForce
+        );
+
         return direction.normalized;
     }
 
-
     private float GetChargePercent()
     {
-        return maxChargeTime > 0f ? Mathf.Clamp01(jumpChargeTime / maxChargeTime) : 1f;
+        return maxChargeTime > 0f
+            ? Mathf.Clamp01(jumpChargeTime / maxChargeTime)
+            : 1f;
     }
-
 
     private float GetLaunchSpeed()
     {
-        float jumpForce = Mathf.Lerp(minJumpForce, maxJumpForce, GetChargePercent());
-        return new Vector2(jumpForwardForce, jumpForce).magnitude * SlowJumpSpeedMultiplier;
-    }
+        float jumpForce = Mathf.Lerp(
+            minJumpForce,
+            maxJumpForce,
+            GetChargePercent()
+        );
 
+        return new Vector2(
+            jumpForwardForce,
+            jumpForce
+        ).magnitude * SlowJumpSpeedMultiplier;
+    }
 
     private void Jump()
     {
         bool wasAirAiming = jumpState == JumpState.AirAiming;
-        float launchSpeed = GetLaunchSpeed();
 
-        // บันทึกความเร็วที่จะพุ่ง
+        // กระโดดจากพื้นได้เฉพาะเมื่อการชาร์จเริ่มบนพื้น
+        // และผู้เล่นยังยืนอยู่บนพื้นขณะปล่อยคลิก
+        if (!wasAirAiming &&
+            (!groundJumpStartedOnGround || !isGrounded))
+        {
+            CancelJumpCharge();
+            return;
+        }
+
+        // Air Double Jump ไม่ใช้เงื่อนไขของการกระโดดจากพื้น
+        float launchSpeed = GetLaunchSpeed();
         pendingLaunchVelocity = aimDirection * launchSpeed;
 
+        groundJumpStartedOnGround = false;
         jumpState = JumpState.Jumping;
         hasLeftGround = wasAirAiming;
         isSlowingFall = false;
@@ -499,25 +647,43 @@ public class MouseController : MonoBehaviour
         HideJumpTrajectory();
     }
 
-
     private void CancelJumpCharge()
     {
-        jumpState = JumpState.Grounded;
+        // ยกเลิกเฉพาะการกระโดดที่ชาร์จจากพื้น
+        groundJumpStartedOnGround = false;
         jumpChargeTime = 0f;
+
+        if (isGrounded)
+        {
+            jumpState = JumpState.Grounded;
+            hasLeftGround = false;
+        }
+        else
+        {
+            // เปลี่ยนเป็นสถานะกลางอากาศ เพื่อให้ Air Double Jump
+            // ยังสามารถเริ่มทำงานด้วยคลิกขวาได้
+            jumpState = JumpState.Jumping;
+            hasLeftGround = true;
+        }
 
         ResetPowerBar();
         HideJumpTrajectory();
     }
 
-   private void CancelAirAim()
+    private void CancelAirAim()
     {
-        jumpState = isGrounded ? JumpState.Grounded : JumpState.Jumping;
+        jumpState = isGrounded
+            ? JumpState.Grounded
+            : JumpState.Jumping;
 
+        // หากยกเลิก Air Aim กลางอากาศ ให้ลองใหม่ได้
         if (!isGrounded)
         {
             airJumpAvailable = true;
+            hasLeftGround = true;
         }
 
+        groundJumpStartedOnGround = false;
         isSlowingFall = false;
         jumpChargeTime = 0f;
 
@@ -527,7 +693,8 @@ public class MouseController : MonoBehaviour
 
     #endregion
 
-    #region Slow
+    #region Slow Obstacles
+
     public void EnterSlowObstacle(SlowObstacle obstacle)
     {
         if (obstacle == null)
@@ -555,7 +722,6 @@ public class MouseController : MonoBehaviour
         SlowMoveSpeedMultiplier = 1f;
         SlowJumpSpeedMultiplier = 1f;
 
-        // หากอยู่ในพื้นที่หนืดซ้อนกัน ใช้ค่าที่ช้าที่สุด
         foreach (SlowObstacle obstacle in activeSlowObstacle)
         {
             if (obstacle == null)
@@ -575,8 +741,10 @@ public class MouseController : MonoBehaviour
         }
     }
 
-#endregion
+    #endregion
+
     #region Power UI
+
     private void UpdatePowerBar()
     {
         float chargePercent = GetChargePercent();
@@ -592,7 +760,6 @@ public class MouseController : MonoBehaviour
             chargeBarHandle.color = chargeColor.Evaluate(chargePercent);
         }
     }
-
 
     private void ResetPowerBar()
     {
@@ -625,7 +792,6 @@ public class MouseController : MonoBehaviour
         {
             GameObject dot = Instantiate(trajectoryDotPrefab);
             trajectoryDots[i] = dot.transform;
-
             dot.SetActive(false);
         }
     }
@@ -637,7 +803,8 @@ public class MouseController : MonoBehaviour
             return;
         }
 
-        if (jumpState != JumpState.Aiming && jumpState != JumpState.AirAiming)
+        if (jumpState != JumpState.Aiming &&
+            jumpState != JumpState.AirAiming)
         {
             HideJumpTrajectory();
             return;
@@ -645,7 +812,10 @@ public class MouseController : MonoBehaviour
 
         float launchSpeed = GetLaunchSpeed();
 
-        Vector2 startPosition = trajectoryPoint != null ? trajectoryPoint.transform.position : rb.position;
+        Vector2 startPosition = trajectoryPoint != null
+            ? trajectoryPoint.transform.position
+            : rb.position;
+
         Vector2 initialVelocity = aimDirection * launchSpeed;
         float gravityY = Physics2D.gravity.y * rb.gravityScale;
 
@@ -655,14 +825,21 @@ public class MouseController : MonoBehaviour
         {
             float time = (i + 1) * trajectoryTimeStep;
 
-            Vector2 point = startPosition + initialVelocity * time + Vector2.up * (0.5f * gravityY * time * time);
+            Vector2 point = startPosition
+                + initialVelocity * time
+                + Vector2.up * (0.5f * gravityY * time * time);
 
             trajectoryDots[i].gameObject.SetActive(true);
             trajectoryDots[i].position = point;
 
             Vector2 segment = point - previousPoint;
 
-            RaycastHit2D hit = Physics2D.Raycast(previousPoint, segment.normalized, segment.magnitude, groundLayer);
+            RaycastHit2D hit = Physics2D.Raycast(
+                previousPoint,
+                segment.normalized,
+                segment.magnitude,
+                groundLayer
+            );
 
             if (hit.collider != null)
             {
@@ -679,7 +856,6 @@ public class MouseController : MonoBehaviour
             previousPoint = point;
         }
     }
-
 
     private void HideJumpTrajectory()
     {
@@ -700,8 +876,10 @@ public class MouseController : MonoBehaviour
     #endregion
 
     #region External Bounce
+
     public void NotifyExternalBounce()
     {
+        groundJumpStartedOnGround = false;
         stopBeforeLaunch = false;
         launchOnNextFixedUpdate = false;
         pendingLaunchVelocity = Vector2.zero;
@@ -737,7 +915,7 @@ public class MouseController : MonoBehaviour
 
     #endregion
 
-    #region Gizmos
+    #region Gizmos and Respawn
 
     private void OnDrawGizmosSelected()
     {
@@ -749,8 +927,10 @@ public class MouseController : MonoBehaviour
         Gizmos.color = Color.red;
         Gizmos.DrawWireCube(groundCheck.position, groundCheckSize);
     }
+
     public void ResetAfterRespawn()
     {
+        groundJumpStartedOnGround = false;
         jumpState = JumpState.Grounded;
         jumpChargeTime = 0f;
         hasLeftGround = false;
@@ -775,5 +955,6 @@ public class MouseController : MonoBehaviour
         ResetPowerBar();
         HideJumpTrajectory();
     }
+
     #endregion
 }
