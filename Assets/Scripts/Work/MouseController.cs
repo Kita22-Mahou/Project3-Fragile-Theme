@@ -643,6 +643,11 @@ public class MouseController : MonoBehaviour
 
         jumpChargeTime = 0f;
 
+        if (!wasAirAiming)
+        {
+            GameAudio.Instance?.PlayGroundJump();
+        }
+
         ResetPowerBar();
         HideJumpTrajectory();
     }

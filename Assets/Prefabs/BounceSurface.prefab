@@ -110,9 +110,10 @@ MonoBehaviour:
   playerLayer:
     serializedVersion: 2
     m_Bits: 128
-  bounceMultiplier: 1.2
+  bounceMultiplier: 1
   minimumBounceSpeed: 15
-  controlLockDuration: 0.15
+  minimumImpactSpeed: 0.5
+  separationDistance: 0.03
 --- !u!50 &3825196859965680777
 Rigidbody2D:
   serializedVersion: 5

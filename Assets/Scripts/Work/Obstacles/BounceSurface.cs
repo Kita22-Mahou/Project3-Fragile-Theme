@@ -1,25 +1,38 @@
-
 using UnityEngine;
-using System.Collections;
 
 public class BounceSurface : MonoBehaviour
 {
     [Header("Detection")]
     [SerializeField] private LayerMask playerLayer;
 
-    [Header("Bounce Settings")]
-    [SerializeField] private float bounceMultiplier = 1.2f;
-    [SerializeField] private float minimumBounceSpeed = 15f;
+    [Header("Jump King Wall Bounce")]
+    [Tooltip("1 = สะท้อนด้วยความเร็วเดิม")]
+    [SerializeField] private float bounceMultiplier = 1f;
 
-    private float controlLockDuration = 0.15f;
+    [Tooltip("ความเร็วเด้งออกจากกำแพงขั้นต่ำ")]
+    [SerializeField] private float minimumBounceSpeed = 5f;
+
+    [Tooltip("ความเร็วชนขั้นต่ำที่จะทำให้เด้ง")]
+    [SerializeField] private float minimumImpactSpeed = 0.5f;
+
+    [Tooltip("ระยะขยับออกจากกำแพงหลังชน")]
+    [SerializeField] private float separationDistance = 0.03f;
 
     private Collider2D surfaceCollider;
-    private MouseController mouseController;
-    private Coroutine unlockCoroutine;
 
     private void Awake()
     {
         surfaceCollider = GetComponent<Collider2D>();
+
+        if (surfaceCollider == null)
+        {
+            Debug.LogError(
+                "BounceSurface ต้องมี Collider2D",
+                this
+            );
+
+            enabled = false;
+        }
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
@@ -34,99 +47,100 @@ public class BounceSurface : MonoBehaviour
         if (playerRb == null)
             return;
 
-        // หาตำแหน่งของ Tumi เทียบกับพื้น
+        // ตำแหน่งผู้เล่นเทียบกับตัวกำแพง
         Vector2 toPlayer =
-            playerRb.worldCenterOfMass - (Vector2)surfaceCollider.bounds.center;
+            playerRb.worldCenterOfMass -
+            (Vector2)surfaceCollider.bounds.center;
 
-        ContactPoint2D sideContact = new ContactPoint2D();
-        bool foundSide = false;
+        Vector2 wallNormal = Vector2.zero;
         float strongestSide = 0f;
 
+        // ตรวจเฉพาะการชนด้านข้าง
         foreach (ContactPoint2D contact in collision.contacts)
         {
-            Vector2 normal = contact.normal;
+            Vector2 normal = contact.normal.normalized;
 
-            // รับเฉพาะการชนด้านข้าง
+            // ไม่รับการชนด้านบนหรือด้านล่าง
             if (Mathf.Abs(normal.x) < 0.7f ||
                 Mathf.Abs(normal.x) <= Mathf.Abs(normal.y))
+            {
                 continue;
+            }
 
-            // หัน Normal ออกจากพื้นเข้าหาตัวผู้เล่น
+            // ให้ Normal ชี้ออกจากกำแพงเข้าหาผู้เล่น
             if (Vector2.Dot(normal, toPlayer) < 0f)
+            {
                 normal = -normal;
+            }
 
             if (Mathf.Abs(normal.x) > strongestSide)
             {
                 strongestSide = Mathf.Abs(normal.x);
-                sideContact = contact;
-                foundSide = true;
+                wallNormal = normal;
             }
         }
 
-        if (!foundSide)
-        {
+        if (wallNormal == Vector2.zero)
             return;
-        }
 
-        Vector2 normalOut = sideContact.normal;
+        wallNormal.Normalize();
 
-        if (Vector2.Dot(normalOut, toPlayer) < 0f)
-            normalOut = -normalOut;
+        // ความเร็วของผู้เล่น ณ ตอนชน
+        Vector2 velocity = playerRb.linearVelocity;
 
-        normalOut.Normalize();
-
-        // ใช้ความเร็วสัมพัทธ์ช่วยหาความเร็วขณะพุ่งเข้าหาพื้น
-        Vector2 relativeVelocity = collision.relativeVelocity;
-        float impactSpeed = Mathf.Abs(
-            Vector2.Dot(relativeVelocity, normalOut)
+        // ใช้ความเร็วสัมพัทธ์ช่วยตรวจจับแรงปะทะ
+        float relativeImpactSpeed = Mathf.Abs(
+            Vector2.Dot(collision.relativeVelocity, wallNormal)
         );
 
-        float currentNormalSpeed = Mathf.Abs(
-            Vector2.Dot(playerRb.linearVelocity, normalOut)
+        float playerImpactSpeed = Mathf.Abs(
+            Vector2.Dot(velocity, wallNormal)
         );
 
-        impactSpeed = Mathf.Max(
-            impactSpeed,
-            currentNormalSpeed
+        float impactSpeed = Mathf.Max(
+            relativeImpactSpeed,
+            playerImpactSpeed
         );
 
-        impactSpeed = Mathf.Max(impactSpeed, 0.1f);
+        // ชนเบาเกินไปจะไม่เด้ง
+        if (impactSpeed < minimumImpactSpeed)
+            return;
 
-        // เก็บความเร็วตามแนวสัมผัสไว้ เพื่อรักษามุมการเคลื่อนที่
-        Vector2 currentVelocity = playerRb.linearVelocity;
+        // เก็บความเร็วตามแนวสัมผัสไว้
+        // สำหรับกำแพงตั้งฉาก ความเร็วแกน Y จะยังคงเดิม
+        float normalVelocity = Vector2.Dot(velocity, wallNormal);
 
         Vector2 tangentVelocity =
-            currentVelocity -
-            Vector2.Dot(currentVelocity, normalOut) * normalOut;
+            velocity - normalVelocity * wallNormal;
 
-        Vector2 incomingVelocity =
-            tangentVelocity - normalOut * impactSpeed;
-
-        Vector2 reflectedVelocity = Vector2.Reflect(
-            incomingVelocity,
-            normalOut
+        // สะท้อนออกจากกำแพง
+        float bounceSpeed = Mathf.Max(
+            impactSpeed * bounceMultiplier,
+            minimumBounceSpeed
         );
 
-        reflectedVelocity *= bounceMultiplier;
+        Vector2 bounceVelocity =
+            tangentVelocity + wallNormal * bounceSpeed;
 
-        float outwardSpeed = Vector2.Dot(
-            reflectedVelocity,
-            normalOut
-        );
+        // ขยับออกจากกำแพงเล็กน้อย ป้องกันการติดขอบ
+        playerRb.position += wallNormal * separationDistance;
 
-        if (outwardSpeed < minimumBounceSpeed)
+        // แจ้ง MouseController ว่ามีแรงเด้งจากภายนอก
+        MouseController controller =
+            playerRb.GetComponent<MouseController>();
+
+        if (controller == null)
         {
-            reflectedVelocity += normalOut *
-                (minimumBounceSpeed - outwardSpeed);
+            controller = playerCollider.GetComponent<MouseController>();
         }
 
-        playerRb.position += normalOut * 0.03f;
+        if (controller != null)
+        {
+            controller.NotifyExternalBounce();
+        }
 
-        playerRb.linearVelocity = reflectedVelocity;
-
-        // ป้องกัน MouseController เขียนทับความเร็วเด้ง
-        TemporarilyLockControl(playerRb);
-
+        // ใช้ความเร็วเด้งหลังแจ้ง Controller
+        playerRb.linearVelocity = bounceVelocity;
     }
 
     private Collider2D FindPlayerCollider(Collision2D collision)
@@ -145,7 +159,6 @@ public class BounceSurface : MonoBehaviour
         if (col == null)
             return false;
 
-        // รองรับ Collider ที่อยู่บน GameObject ลูก
         bool colliderLayerMatches =
             (playerLayer.value & (1 << col.gameObject.layer)) != 0;
 
@@ -155,33 +168,5 @@ public class BounceSurface : MonoBehaviour
             (playerLayer.value & (1 << body.gameObject.layer)) != 0;
 
         return colliderLayerMatches || bodyLayerMatches;
-    }
-
-    private void TemporarilyLockControl(Rigidbody2D playerRb)
-    {
-        MouseController controller =
-            playerRb.GetComponent<MouseController>();
-
-        if (controller == null || !controller.enabled)
-            return;
-
-        mouseController = controller;
-        mouseController.enabled = false;
-
-        if (unlockCoroutine != null)
-            StopCoroutine(unlockCoroutine);
-
-        unlockCoroutine = StartCoroutine(RestoreControl());
-    }
-
-    private IEnumerator RestoreControl()
-    {
-        yield return new WaitForSeconds(controlLockDuration);
-
-        if (mouseController != null)
-            mouseController.enabled = true;
-
-        mouseController = null;
-        unlockCoroutine = null;
     }
 }

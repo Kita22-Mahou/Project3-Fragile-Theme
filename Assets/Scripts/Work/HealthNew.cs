@@ -38,7 +38,6 @@ public class HealthNew : MonoBehaviour
     [SerializeField] private Sprite crackedShell;
     [SerializeField] private Sprite brokenShell2;
     [SerializeField] private Sprite brokenShell1;
-    [SerializeField] private Sprite emptyShell;
 
     private float crackAtDamagePercent = 10f;
     private float breakOneSectionAtPercent = 33f;
@@ -200,7 +199,7 @@ public class HealthNew : MonoBehaviour
         }
 
         currentHP = Mathf.Clamp(currentHP - damage, 0f, maxHP);
-
+        GameAudio.Instance?.PlayDamage();
         UpdateShellUI();
 
         Debug.Log($"HP: {currentHP:F1} / {maxHP:F1}");
@@ -227,7 +226,7 @@ public class HealthNew : MonoBehaviour
         if (currentHP <= 0f)
         {
             newStage = 4;
-            targetSprite = emptyShell != null ? emptyShell : brokenShell1;
+            targetSprite = null;
         }
         // แตกสองส่วน
         else if (damagePercent >= breakTwoSectionsAtPercent)
@@ -287,7 +286,7 @@ public class HealthNew : MonoBehaviour
 
         isDead = true;
         currentHP = 0f;
-
+        GameAudio.Instance?.PlayDeath();
         UpdateShellUI();
 
         if (rb != null)
