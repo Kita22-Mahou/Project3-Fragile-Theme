@@ -106,15 +106,6 @@ public class MouseController : MonoBehaviour
     [SerializeField] private Scrollbar chargeBar;
     [SerializeField] private Image chargeBarHandle;
     [SerializeField] private Gradient chargeColor;
-
-    // SLIPPERY SURFACE
-    [Header("Slippery Surface")]
-    [SerializeField] private float slipperyFrictionThreshold = 0.15f;
-    [SerializeField] private float slipperyAcceleration = 18f;
-    [SerializeField] private float slipperyDeceleration = 2f;
-    [SerializeField] private float maxSlipperySpeed = 14f;
-    [SerializeField] private float slopeNormalYThreshold = 0.98f;
-
     private Collider2D currentGroundCollider;
     private Vector2 groundSurfaceNormal = Vector2.up;
 
@@ -124,6 +115,8 @@ public class MouseController : MonoBehaviour
     private Rigidbody2D rb;
     private Collider2D playerCollider;
     private Camera mainCamera;
+
+    private HealthNew healthNew;
 
     private void Awake()
     {
@@ -318,84 +311,13 @@ public class MouseController : MonoBehaviour
             return;
         }
 
-        // พื้นลื่นต้องทำงานก่อนตรวจสถานะเล็ง
-        if (isGrounded && IsOnSlipperySurface())
-        {
-            MoveOnSlipperySurface(jumpState != JumpState.Aiming);
+        // ระหว่างเล็ง หรือไม่ได้กดเดิน: ไม่แตะความเร็วแกน X
+        // ปล่อยให้ Physics Material 2D (Friction) เป็นตัวตัดสินว่าหยุดหรือไถล
+        if (jumpState == JumpState.Aiming || Mathf.Abs(moveInputX) < 0.01f)
             return;
-        }
 
-        // พื้นปกติหยุดเดินระหว่างเล็ง
-        if (jumpState == JumpState.Aiming)
-        {
-            rb.linearVelocity = new Vector2(
-                0f,
-                rb.linearVelocity.y
-            );
-
-            return;
-        }
-
-        // การเดินปกติ
         rb.linearVelocity = new Vector2(
             moveInputX * moveSpeed * SlowMoveSpeedMultiplier,
-            rb.linearVelocity.y
-        );
-    }
-
-    private bool IsOnSlipperySurface()
-    {
-        if (currentGroundCollider == null)
-            return false;
-
-        PhysicsMaterial2D material =
-            currentGroundCollider.sharedMaterial;
-
-        if (material == null &&
-            currentGroundCollider.attachedRigidbody != null)
-        {
-            material =
-                currentGroundCollider.attachedRigidbody.sharedMaterial;
-        }
-
-        return material != null &&
-               material.friction <= slipperyFrictionThreshold;
-    }
-
-    private void MoveOnSlipperySurface(bool allowInput = true)
-    {
-        float deltaTime = Time.fixedDeltaTime;
-        float velocityX = rb.linearVelocity.x;
-
-        float maxSpeed = Mathf.Max(
-            0.1f,
-            maxSlipperySpeed * SlowMoveSpeedMultiplier
-        );
-
-        if (allowInput && Mathf.Abs(moveInputX) > 0.01f)
-        {
-            velocityX += moveInputX
-                        * slipperyAcceleration
-                        * SlowMoveSpeedMultiplier
-                        * deltaTime;
-
-            velocityX = Mathf.Clamp(
-                velocityX,
-                -maxSpeed,
-                maxSpeed
-            );
-        }
-        else if (groundSurfaceNormal.y >= slopeNormalYThreshold)
-        {
-            velocityX = Mathf.MoveTowards(
-                velocityX,
-                0f,
-                slipperyDeceleration * deltaTime
-            );
-        }
-
-        rb.linearVelocity = new Vector2(
-            velocityX,
             rb.linearVelocity.y
         );
     }
@@ -424,53 +346,19 @@ public class MouseController : MonoBehaviour
 
     private void CheckGround()
     {
-        // สำคัญ:
         // หลังเด้งให้ละเว้น Ground Check ชั่วคราว
-        // ป้องกันสถานะกลับเป็น Grounded เร็วเกินไป
-        if (externalBounceGroundIgnoreTimer > 0f)
+        if (externalBounceGroundIgnoreTimer > 0f || groundCheck == null)
         {
             isGrounded = false;
-            currentGroundCollider = null;
-            groundSurfaceNormal = Vector2.up;
             return;
         }
 
-        if (groundCheck == null)
-        {
-            isGrounded = false;
-            currentGroundCollider = null;
-            groundSurfaceNormal = Vector2.up;
-            return;
-        }
-
-        currentGroundCollider = Physics2D.OverlapBox(
+        isGrounded = Physics2D.OverlapBox(
             groundCheck.position,
             groundCheckSize,
             0f,
             groundLayer
-        );
-
-        isGrounded = currentGroundCollider != null;
-        groundSurfaceNormal = Vector2.up;
-
-        if (!isGrounded)
-            return;
-
-        Vector2 rayOrigin =
-            (Vector2)groundCheck.position + Vector2.up * 0.25f;
-
-        RaycastHit2D hit = Physics2D.Raycast(
-            rayOrigin,
-            Vector2.down,
-            0.6f,
-            groundLayer
-        );
-
-        if (hit.collider != null)
-        {
-            currentGroundCollider = hit.collider;
-            groundSurfaceNormal = hit.normal;
-        }
+        ) != null;
     }
 
     private void UpdateJumpState()

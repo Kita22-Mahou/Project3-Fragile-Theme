@@ -39,6 +39,13 @@ public class HealthNew : MonoBehaviour
     [SerializeField] private Sprite brokenShell2;
     [SerializeField] private Sprite brokenShell1;
 
+    [Header("Death Fade")]
+    [Tooltip("CanvasGroup ของ Image สีดำเต็มจอ (เว้นว่าง = ไม่ fade)")]
+    [SerializeField] private CanvasGroup fadeGroup;
+    [SerializeField] private float fadeOutDuration = 0.4f;
+    [SerializeField] private float blackHoldDuration = 0.15f;
+    [SerializeField] private float fadeInDuration = 0.4f;
+
     private float crackAtDamagePercent = 10f;
     private float breakOneSectionAtPercent = 33f;
     private float breakTwoSectionsAtPercent = 66f;
@@ -61,13 +68,19 @@ public class HealthNew : MonoBehaviour
 
     private static Sprite shellShardSprite;
 
-    private float respawnDelay = 1f;
+    [SerializeField] private float respawnDelay = 0.6f;
 
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
         shellWallBounce = GetComponent<ShellWallBounce>();
         mouseController = GetComponent<MouseController>();
+
+        if (fadeGroup != null)
+        {
+            fadeGroup.alpha = 0f;
+            fadeGroup.blocksRaycasts = false;
+        }
 
         maxHP = Mathf.Max(1f, maxHP);
         currentHP = Mathf.Clamp(currentHP, 0f, maxHP);
@@ -171,6 +184,13 @@ public class HealthNew : MonoBehaviour
         TakeDamage(damage);
     }
 
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.R))
+        {
+            Die();
+        }
+    }
 
     private Vector2 GetNormalTowardsPlayer(ContactPoint2D contact)
     {
@@ -277,7 +297,7 @@ public class HealthNew : MonoBehaviour
         UpdateShellUI();
     }
 
-    private void Die()
+    public void Die()
     {
         if (isDead)
         {
@@ -318,9 +338,43 @@ public class HealthNew : MonoBehaviour
 
     private IEnumerator RespawnAfterDelay()
     {
+        // รอให้เห็นฉากตอนตายสักครู่ก่อนเริ่ม fade
         yield return new WaitForSecondsRealtime(respawnDelay);
 
-        bool respawned = Checkpoint.RespawnPlayer(transform);
+        // 1) จอค่อยๆ ดำ
+        yield return FadeTo(1f, fadeOutDuration);
+
+        // 2) เกิดใหม่ตอนจอดำ ผู้เล่นจะไม่เห็นการวาร์ป
+        Checkpoint.RespawnPlayer(transform);
+
+        yield return new WaitForSecondsRealtime(blackHoldDuration);
+
+        // 3) จอค่อยๆ สว่างกลับมา
+        yield return FadeTo(0f, fadeInDuration);
+    }
+
+
+    private IEnumerator FadeTo(float targetAlpha, float duration)
+    {
+        if (fadeGroup == null)
+            yield break;
+
+        fadeGroup.blocksRaycasts = true;
+
+        float startAlpha = fadeGroup.alpha;
+        float elapsed = 0f;
+        duration = Mathf.Max(0.01f, duration);
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            fadeGroup.alpha = Mathf.Lerp(
+                startAlpha, targetAlpha, Mathf.Clamp01(elapsed / duration));
+            yield return null;
+        }
+
+        fadeGroup.alpha = targetAlpha;
+        fadeGroup.blocksRaycasts = targetAlpha > 0.5f;
     }
 
     public void ResetAfterRespawn()
