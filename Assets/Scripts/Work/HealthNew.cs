@@ -171,6 +171,13 @@ public class HealthNew : MonoBehaviour
         TakeDamage(damage);
     }
 
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.R))
+        {
+            Die();
+        }
+    }
 
     private Vector2 GetNormalTowardsPlayer(ContactPoint2D contact)
     {
@@ -277,7 +284,7 @@ public class HealthNew : MonoBehaviour
         UpdateShellUI();
     }
 
-    private void Die()
+    public void Die()
     {
         if (isDead)
         {

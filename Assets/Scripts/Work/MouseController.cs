@@ -116,6 +116,8 @@ public class MouseController : MonoBehaviour
     private Collider2D playerCollider;
     private Camera mainCamera;
 
+    private HealthNew healthNew;
+
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
