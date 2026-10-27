@@ -47,7 +47,9 @@ public class MovingPlatform2D : MonoBehaviour
     private Rigidbody2D rb;
     private Collider2D platformCollider;
     private MouseController standingPlayer;
+    private SpriteRenderer sprite;
 
+    [SerializeField] private bool isFlipSprite = false;
 
     // =========================================================
     // PATH STATE
@@ -68,6 +70,8 @@ public class MovingPlatform2D : MonoBehaviour
 
         rb.bodyType = RigidbodyType2D.Kinematic;
         rb.interpolation = RigidbodyInterpolation2D.Interpolate;
+
+        sprite = GetComponent<SpriteRenderer>();
 
         BuildPath();
     }
@@ -143,8 +147,21 @@ public class MovingPlatform2D : MonoBehaviour
                 return;
             }
 
-            // กลับทิศและวิ่งย้อนตามเส้นทางเดิม
-            pathDirection *= -1;
+            // flip sprite
+            if (isFlipSprite)
+            {
+                if (sprite.flipX)
+                {
+                    sprite.flipX = false;
+                }
+                else if (!sprite.flipX)
+                {
+                    sprite.flipX = true;
+                }
+            }
+
+                // กลับทิศและวิ่งย้อนตามเส้นทางเดิมrite.flipX = false;
+                pathDirection *= -1;
             targetIndex += pathDirection * 2;
         }
     }
