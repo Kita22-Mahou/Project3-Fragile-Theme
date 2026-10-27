@@ -14,6 +14,8 @@ public class MouseController : MonoBehaviour
 
     private JumpState jumpState = JumpState.Grounded;
 
+    [SerializeField] private Animator animator;
+
     // MOVEMENT
     [Header("Movement")]
     [Tooltip("เปิดหรือปิดการเดินซ้าย-ขวา")]
@@ -265,6 +267,7 @@ public class MouseController : MonoBehaviour
         }
 
         UpdateJumpTrajectory();
+        ChangeAnimation();
     }
 
     private void FixedUpdate()
@@ -899,4 +902,37 @@ public class MouseController : MonoBehaviour
     }
 
     #endregion
+
+    void ChangeAnimation()
+    {
+        if (jumpState == JumpState.Grounded)
+        {
+            animator.Play("Player idle");
+        }
+        else if (jumpState == JumpState.Aiming)
+        {
+            animator.Play("PlayerAiming");
+        }
+        else if (jumpState == JumpState.Jumping)
+        {
+            animator.Play("PlayerInAir");
+        }
+    }
+
+    void ChangeState(JumpState newState)
+    {
+        if (jumpState == newState)
+            return;
+
+        if (jumpState == JumpState.Grounded)
+            animator.SetBool("isOnGround", false);
+        else if (jumpState == JumpState.Aiming)
+            animator.SetBool("isAiming", false);
+        else if (jumpState == JumpState.Jumping)
+            animator.SetBool("isInAir", false);
+
+        jumpState = newState;
+
+        animator.Play("");
+    }
 }
