@@ -1,4 +1,3 @@
-
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -149,12 +148,12 @@ public class ShellWallBounce : MonoBehaviour
         if (!protectDamageUntilLanding)
             return;
 
-        // รอให้ Tumi ออกจากพื้นหลังจากสะท้อนสำเร็จก่อน
+        // รอให้ผู้เล่นออกจากพื้นหลังเด้งสำเร็จ
         if (!IsGrounded())
         {
             hasLeftGroundAfterBounce = true;
         }
-        // เมื่อกลับมาลงพื้น จึงยกเลิกการป้องกัน
+        // ยกเลิกการป้องกันเมื่อกลับมาลงพื้น
         else if (hasLeftGroundAfterBounce)
         {
             protectDamageUntilLanding = false;
@@ -169,14 +168,19 @@ public class ShellWallBounce : MonoBehaviour
 
         float lockedTime = Time.time - controlLockStartTime;
 
+        // ปลดล็อกหลังเด้งครบเวลาที่กำหนด
+        // ไม่ต้องรอให้ผู้เล่นลงพื้น
+        bool controlLockFinished =
+            lockedTime >= controlLockDuration;
+
+        // ป้องกันการล็อกค้างหากมีข้อผิดพลาด
         bool reachedMaxTime =
             lockedTime >= maxControlLockDuration;
 
-        bool canUnlockOnGround =
-            lockedTime >= controlLockDuration && IsGrounded();
-
-        if (reachedMaxTime || canUnlockOnGround)
+        if (controlLockFinished || reachedMaxTime)
+        {
             UnlockControl();
+        }
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
@@ -197,7 +201,7 @@ public class ShellWallBounce : MonoBehaviour
         return (bounceableLayers.value & (1 << obj.layer)) != 0;
     }
 
-    // หัน Normal ให้ออกจากผิวเข้าหาตัว Tumi
+    // หัน Normal ให้ออกจากผิวเข้าหาผู้เล่น
     private Vector2 GetSurfaceNormal(ContactPoint2D contact)
     {
         Vector2 normal = contact.normal.normalized;
@@ -280,16 +284,24 @@ public class ShellWallBounce : MonoBehaviour
         if (outgoing.sqrMagnitude < 0.01f)
             return;
 
-        // ขยับออกจากผิวเล็กน้อยเพื่อลดการติด Collider
+        // ขยับออกจากผิวและกำหนดความเร็วเด้ง
         rb.position += bestNormal * 0.04f;
         rb.linearVelocity = outgoing;
 
         hasBounced = true;
 
-        // ป้องกันดาเมจต่อจนกว่าจะลงพื้นหลังจากเด้ง
+        // ป้องกันดาเมจจนกว่าจะลงพื้นหลังจากเด้ง
         protectDamageUntilLanding = true;
         hasLeftGroundAfterBounce = false;
 
+        // สำคัญ: แจ้ง MouseController ว่าเด้งเข้าสู่อากาศแล้ว
+        // ไม่รีเซ็ตสิทธิ์ Double Jump
+        if (mouseController != null)
+        {
+            mouseController.NotifyExternalBounce();
+        }
+
+        // ล็อกการควบคุมชั่วคราว ป้องกันระบบอื่นเขียนทับการเด้ง
         LockControl();
     }
 
@@ -297,7 +309,6 @@ public class ShellWallBounce : MonoBehaviour
         Vector2 incoming,
         Vector2 wallNormal)
     {
-        // เด้งออกจากผนังในแนวนอน
         float horizontalSpeed = Mathf.Max(
             Mathf.Abs(incoming.x) * horizontalBounceMultiplier,
             minimumHorizontalBounceSpeed
@@ -308,7 +319,6 @@ public class ShellWallBounce : MonoBehaviour
 
         float outgoingY = incoming.y;
 
-        // หากกำลังตกชนผนัง ให้คำนวณแรงเด้งขึ้นจาก Gravity จริง
         if (incoming.y < 0f)
         {
             float gravity = Mathf.Abs(
@@ -326,11 +336,9 @@ public class ShellWallBounce : MonoBehaviour
         }
         else if (incoming.y > 0f)
         {
-            // กำลังขึ้นชนผนัง ให้รักษาความเร็วขึ้นไว้
             outgoingY = incoming.y * upwardBounceMultiplier;
         }
 
-        // จำกัดความเร็วแนวตั้งก่อนคำนวณพื้นที่ความเร็วแนวนอน
         float maxVerticalSpeed = maximumBounceSpeed * 0.8f;
 
         outgoingY = Mathf.Clamp(
@@ -359,14 +367,16 @@ public class ShellWallBounce : MonoBehaviour
         Vector2 incoming,
         Vector2 surfaceNormal)
     {
-        // สะท้อนตามมุมจริงและรักษาความเร็วแนวนอน
         Vector2 reflected = Vector2.Reflect(
             incoming,
             surfaceNormal.normalized
         );
 
         if (reflected.sqrMagnitude < 0.001f)
-            return surfaceNormal.normalized * minimumVerticalBounceSpeed;
+        {
+            return surfaceNormal.normalized *
+                   minimumVerticalBounceSpeed;
+        }
 
         float speed = Mathf.Clamp(
             reflected.magnitude * verticalBounceMultiplier,
@@ -383,7 +393,6 @@ public class ShellWallBounce : MonoBehaviour
             return;
 
         previousMovementLocked = mouseController.movementLocked;
-
         mouseController.movementLocked = true;
 
         controlLocked = true;
@@ -405,13 +414,13 @@ public class ShellWallBounce : MonoBehaviour
         protectionTimer = 0f;
     }
 
-    // HealthPoint ต้องเรียกก่อนหัก HP
+    // HealthNew เรียกก่อนหัก HP
     public bool TryBlockDamage()
     {
         return IsProtecting;
     }
 
-    // เตรียมไว้ใช้เติม Shell ที่ Checkpoint
+    // เติม Shell ที่ Checkpoint
     public void RefillShells()
     {
         remainingUses = maxShellUses;
