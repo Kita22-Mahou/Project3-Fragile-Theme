@@ -570,6 +570,7 @@ MonoBehaviour:
   maxChargeTime: 1
   jumpForwardForce: 14
   enableAirDoubleJump: 1
+  externalBounceGroundIgnoreDuration: 0.25
   enableSlowFall: 1
   slowFallSpeed: 2
   stopBeforeJump: 1
@@ -613,6 +614,11 @@ MonoBehaviour:
     m_ColorSpace: -1
     m_NumColorKeys: 5
     m_NumAlphaKeys: 2
+  slipperyFrictionThreshold: 0.15
+  slipperyAcceleration: 18
+  slipperyDeceleration: 2
+  maxSlipperySpeed: 14
+  slopeNormalYThreshold: 0.98
   movementLocked: 0
 --- !u!114 &750526545227959846
 MonoBehaviour:
@@ -632,19 +638,23 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   protectionDuration: 0.3
-  horizontalBounceMultiplier: 1.332
-  minimumHorizontalBounceSpeed: 13
+  wallBounceLayers:
+    serializedVersion: 2
+    m_Bits: 256
+  horizontalBounceMultiplier: 10
+  minimumHorizontalBounceSpeed: 10
   upwardBounceHeight: 6
-  upwardBounceMultiplier: 1.5
+  upwardBounceMultiplier: 1.2
+  wallBounceCooldown: 0.12
+  bounceableLayers:
+    serializedVersion: 2
+    m_Bits: 320
   verticalBounceMultiplier: 1.5
   minimumVerticalBounceSpeed: 13
   maximumBounceSpeed: 40
   minimumImpactSpeed: 2.35
   wallNormalThreshold: 0.7
   verticalNormalThreshold: 0.7
-  bounceableLayers:
-    serializedVersion: 2
-    m_Bits: 320
   controlLockDuration: 0.12
   maxControlLockDuration: 2
 --- !u!114 &3853071931027233701
@@ -673,7 +683,6 @@ MonoBehaviour:
   crackedShell: {fileID: 21300000, guid: 73fdfe3bdf34ddf4880920bee25ba2ce, type: 3}
   brokenShell2: {fileID: 21300000, guid: 785d20962afbb6445aee70c338af87ae, type: 3}
   brokenShell1: {fileID: 21300000, guid: 3592b7f919fa0b24b858dcb84d7ef522, type: 3}
-  emptyShell: {fileID: 21300000, guid: dec0106bf91200740b46a9765810239c, type: 3}
   shellBreakShardCount: 100
   shellBreakShardSpeed: 200
   shellBreakEffectDuration: 0.6

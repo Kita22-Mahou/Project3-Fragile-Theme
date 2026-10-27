@@ -29,8 +29,8 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 31.87, y: -0.7, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
+  m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -83,7 +83,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_MaskInteraction: 0
-  m_Sprite: {fileID: -2413806693520163455, guid: a86470a33a6bf42c4b3595704624658b, type: 3}
+  m_Sprite: {fileID: 21300000, guid: dec0106bf91200740b46a9765810239c, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -144,8 +144,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Checkpoint
   respawnOffset: {x: 0, y: 0.5}
   flagSprite: {fileID: 623706357074135152}
-  inactiveSprite: {fileID: 0}
-  activeSprite: {fileID: 0}
+  inactiveSprite: {fileID: 21300000, guid: dec0106bf91200740b46a9765810239c, type: 3}
+  activeSprite: {fileID: 21300000, guid: bd56e8ba071f267418851e75e8210061, type: 3}
   fireworkColors:
   - {r: 1, g: 0.25, b: 0.3, a: 1}
   - {r: 1, g: 0.85, b: 0.2, a: 1}

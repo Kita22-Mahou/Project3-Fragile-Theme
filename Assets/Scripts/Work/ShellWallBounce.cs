@@ -7,16 +7,30 @@ public class ShellWallBounce : MonoBehaviour
     [SerializeField] private int maxShellUses = 3;
     [SerializeField] private Image[] shellUseIcons = new Image[3];
 
-    [Header("Protection")]
+    [Header("Shell Protection")]
     [SerializeField] private float protectionDuration = 0.75f;
 
-    [Header("Wall Bounce")]
+    [Header("Automatic Wall Bounce")]
+    [Tooltip("เลือก Layer ของกำแพงที่เด้งได้")]
+    [SerializeField] private LayerMask wallBounceLayers;
+
+    [Tooltip("แรงสะท้อนแนวนอน")]
     [SerializeField] private float horizontalBounceMultiplier = 1.63f;
+
     [SerializeField] private float minimumHorizontalBounceSpeed = 12f;
+
+    [Tooltip("ความสูงเป้าหมายเมื่อชนกำแพงขณะกำลังตก")]
     [SerializeField] private float upwardBounceHeight = 3f;
+
     [SerializeField] private float upwardBounceMultiplier = 1.1f;
 
-    [Header("Vertical Bounce")]
+    [Tooltip("ระยะเวลาขั้นต่ำระหว่างการเด้งกำแพง")]
+    [SerializeField] private float wallBounceCooldown = 0.12f;
+
+    [Header("Shell Floor Bounce")]
+    [Tooltip("Layer ของพื้นที่ Shell สามารถเด้งได้")]
+    [SerializeField] private LayerMask bounceableLayers;
+
     [SerializeField] private float verticalBounceMultiplier = 1.1f;
     [SerializeField] private float minimumVerticalBounceSpeed = 16f;
     [SerializeField] private float maximumBounceSpeed = 30f;
@@ -30,8 +44,6 @@ public class ShellWallBounce : MonoBehaviour
     [Range(0.1f, 1f)]
     [SerializeField] private float verticalNormalThreshold = 0.7f;
 
-    [SerializeField] private LayerMask bounceableLayers;
-
     [Header("Control Lock")]
     [SerializeField] private float controlLockDuration = 0.12f;
     [SerializeField] private float maxControlLockDuration = 2f;
@@ -41,6 +53,7 @@ public class ShellWallBounce : MonoBehaviour
 
     private int remainingUses;
     private float protectionTimer;
+    private float lastWallBounceTime = float.NegativeInfinity;
 
     private bool isProtecting;
     private bool hasBounced;
@@ -55,24 +68,44 @@ public class ShellWallBounce : MonoBehaviour
 
     public int RemainingUses => remainingUses;
     public int MaxShellUses => maxShellUses;
-    public bool IsProtecting => isProtecting || protectDamageUntilLanding;
+
+    public bool IsProtecting =>
+        isProtecting || protectDamageUntilLanding;
+
+    // ให้ BounceSurface ตรวจสอบว่า ShellWallBounce
+    // รับผิดชอบเด้งกำแพง Layer นี้อยู่หรือไม่
+    public bool UsesAutomaticWallBounceForLayer(int layer)
+    {
+        return enabled &&
+               (wallBounceLayers.value & (1 << layer)) != 0;
+    }
 
     private void Awake()
     {
         maxShellUses = Mathf.Max(0, maxShellUses);
         protectionDuration = Mathf.Max(0.05f, protectionDuration);
 
-        horizontalBounceMultiplier = Mathf.Max(0f, horizontalBounceMultiplier);
-        minimumHorizontalBounceSpeed = Mathf.Max(0f, minimumHorizontalBounceSpeed);
+        horizontalBounceMultiplier =
+            Mathf.Max(0f, horizontalBounceMultiplier);
+
+        minimumHorizontalBounceSpeed =
+            Mathf.Max(0f, minimumHorizontalBounceSpeed);
+
         upwardBounceHeight = Mathf.Max(0f, upwardBounceHeight);
         upwardBounceMultiplier = Mathf.Max(0f, upwardBounceMultiplier);
-        verticalBounceMultiplier = Mathf.Max(0f, verticalBounceMultiplier);
-        minimumVerticalBounceSpeed = Mathf.Max(0f, minimumVerticalBounceSpeed);
+
+        verticalBounceMultiplier =
+            Mathf.Max(0f, verticalBounceMultiplier);
+
+        minimumVerticalBounceSpeed =
+            Mathf.Max(0f, minimumVerticalBounceSpeed);
 
         maximumBounceSpeed = Mathf.Max(
             minimumVerticalBounceSpeed,
             maximumBounceSpeed
         );
+
+        wallBounceCooldown = Mathf.Max(0f, wallBounceCooldown);
 
         maxControlLockDuration = Mathf.Max(
             controlLockDuration,
@@ -82,10 +115,19 @@ public class ShellWallBounce : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
         mouseController = GetComponent<MouseController>();
 
-        remainingUses = maxShellUses;
+        if (rb == null)
+        {
+            Debug.LogError(
+                "ShellWallBounce requires Rigidbody2D.",
+                this
+            );
 
-        if (rb != null)
-            velocityBeforePhysics = rb.linearVelocity;
+            enabled = false;
+            return;
+        }
+
+        remainingUses = maxShellUses;
+        velocityBeforePhysics = rb.linearVelocity;
 
         UpdateShellIcons();
     }
@@ -93,7 +135,9 @@ public class ShellWallBounce : MonoBehaviour
     private void Update()
     {
         if (Input.GetKeyDown(KeyCode.Space))
+        {
             ActivateShell();
+        }
 
         UpdateProtectionTimer();
         UpdateLandingProtection();
@@ -103,18 +147,29 @@ public class ShellWallBounce : MonoBehaviour
     private void FixedUpdate()
     {
         if (rb != null)
+        {
             velocityBeforePhysics = rb.linearVelocity;
+        }
     }
 
     private bool IsGrounded()
     {
-        return mouseController != null && mouseController.isGrounded;
+        return mouseController != null &&
+               mouseController.isGrounded;
     }
+
+    // --------------------------------------------------
+    // SPACEBAR SHELL PROTECTION
+    // --------------------------------------------------
 
     private void ActivateShell()
     {
-        if (rb == null || remainingUses <= 0 || IsProtecting)
+        if (rb == null ||
+            remainingUses <= 0 ||
+            IsProtecting)
+        {
             return;
+        }
 
         // ไม่ใช้ Shell ขณะยืนอยู่นิ่งบนพื้น
         if (IsGrounded() &&
@@ -140,7 +195,9 @@ public class ShellWallBounce : MonoBehaviour
         protectionTimer -= Time.deltaTime;
 
         if (protectionTimer <= 0f)
+        {
             EndProtection();
+        }
     }
 
     private void UpdateLandingProtection()
@@ -148,12 +205,10 @@ public class ShellWallBounce : MonoBehaviour
         if (!protectDamageUntilLanding)
             return;
 
-        // รอให้ผู้เล่นออกจากพื้นหลังเด้งสำเร็จ
         if (!IsGrounded())
         {
             hasLeftGroundAfterBounce = true;
         }
-        // ยกเลิกการป้องกันเมื่อกลับมาลงพื้น
         else if (hasLeftGroundAfterBounce)
         {
             protectDamageUntilLanding = false;
@@ -161,148 +216,123 @@ public class ShellWallBounce : MonoBehaviour
         }
     }
 
-    private void UpdateControlLock()
-    {
-        if (!controlLocked)
-            return;
-
-        float lockedTime = Time.time - controlLockStartTime;
-
-        // ปลดล็อกหลังเด้งครบเวลาที่กำหนด
-        // ไม่ต้องรอให้ผู้เล่นลงพื้น
-        bool controlLockFinished =
-            lockedTime >= controlLockDuration;
-
-        // ป้องกันการล็อกค้างหากมีข้อผิดพลาด
-        bool reachedMaxTime =
-            lockedTime >= maxControlLockDuration;
-
-        if (controlLockFinished || reachedMaxTime)
-        {
-            UnlockControl();
-        }
-    }
+    // --------------------------------------------------
+    // COLLISION
+    // --------------------------------------------------
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        TryBounce(collision);
+        // กำแพงเด้งอัตโนมัติ ไม่เกี่ยวกับ Spacebar
+        bool wallBounced = TryAutomaticWallBounce(collision);
+
+        // ถ้าไม่ได้เด้งจากกำแพง ให้ตรวจ Shell กับพื้น
+        if (!wallBounced)
+        {
+            TryShellFloorBounce(collision);
+        }
     }
 
     private void OnCollisionStay2D(Collision2D collision)
     {
-        TryBounce(collision);
+        // Shell เด้งกับพื้นเท่านั้น
+        TryShellFloorBounce(collision);
     }
 
-    private bool IsBounceable(GameObject obj)
+    private bool IsLayerInMask(GameObject obj, LayerMask mask)
     {
         if (obj == null)
             return false;
 
-        return (bounceableLayers.value & (1 << obj.layer)) != 0;
+        return (mask.value & (1 << obj.layer)) != 0;
     }
 
-    // หัน Normal ให้ออกจากผิวเข้าหาผู้เล่น
-    private Vector2 GetSurfaceNormal(ContactPoint2D contact)
+    // --------------------------------------------------
+    // AUTOMATIC WALL BOUNCE
+    // --------------------------------------------------
+
+    private bool TryAutomaticWallBounce(Collision2D collision)
     {
-        Vector2 normal = contact.normal.normalized;
+        if (rb == null ||
+            collision.contactCount == 0)
+        {
+            return false;
+        }
 
-        Vector2 toPlayer =
-            rb.worldCenterOfMass - contact.point;
-
-        if (Vector2.Dot(normal, toPlayer) < 0f)
-            normal = -normal;
-
-        return normal;
-    }
-
-    private void TryBounce(Collision2D collision)
-    {
-        if (!isProtecting || hasBounced || rb == null)
-            return;
-
-        if (!IsBounceable(collision.gameObject))
-            return;
-
-        if (collision.contactCount == 0)
-            return;
+        // ตรวจ Layer ของกำแพง ไม่ต้องใช้ Spacebar
+        if (!IsLayerInMask(collision.gameObject, wallBounceLayers))
+        {
+            return false;
+        }
 
         Vector2 incoming = velocityBeforePhysics;
 
         if (incoming.sqrMagnitude < 0.01f)
+        {
             incoming = rb.linearVelocity;
+        }
 
-        if (incoming.sqrMagnitude < 0.01f)
-            return;
-
-        Vector2 bestNormal = Vector2.zero;
+        Vector2 wallNormal = Vector2.zero;
         float strongestImpact = 0f;
 
-        // เลือกจุดสัมผัสที่กำลังพุ่งเข้าชนมากที่สุด
         for (int i = 0; i < collision.contactCount; i++)
         {
             ContactPoint2D contact = collision.GetContact(i);
+
             Vector2 normal = GetSurfaceNormal(contact);
 
+            // รับเฉพาะการชนด้านข้าง
+            if (Mathf.Abs(normal.x) < wallNormalThreshold ||
+                Mathf.Abs(normal.x) <= Mathf.Abs(normal.y))
+            {
+                continue;
+            }
+
+            // ต้องกำลังเคลื่อนที่เข้าหากำแพง
             float impact = -Vector2.Dot(incoming, normal);
 
             if (impact > strongestImpact)
             {
                 strongestImpact = impact;
-                bestNormal = normal;
+                wallNormal = normal;
             }
         }
 
-        if (bestNormal == Vector2.zero ||
+        if (wallNormal == Vector2.zero ||
             strongestImpact < minimumImpactSpeed)
         {
-            return;
+            return false;
         }
 
-        bool hitWall =
-            Mathf.Abs(bestNormal.x) >= wallNormalThreshold &&
-            Mathf.Abs(bestNormal.x) > Mathf.Abs(bestNormal.y);
-
-        bool hitHorizontalSurface =
-            Mathf.Abs(bestNormal.y) >= verticalNormalThreshold &&
-            Mathf.Abs(bestNormal.y) >= Mathf.Abs(bestNormal.x);
-
-        Vector2 outgoing;
-
-        if (hitWall)
+        // ป้องกันการเด้งซ้ำถี่เกินไป
+        if (Time.time - lastWallBounceTime < wallBounceCooldown)
         {
-            outgoing = CalculateWallBounce(incoming, bestNormal);
+            return false;
         }
-        else if (hitHorizontalSurface)
-        {
-            outgoing = CalculateVerticalBounce(incoming, bestNormal);
-        }
-        else
-        {
-            return;
-        }
+
+        Vector2 outgoing = CalculateWallBounce(
+            incoming,
+            wallNormal
+        );
 
         if (outgoing.sqrMagnitude < 0.01f)
-            return;
+        {
+            return false;
+        }
 
-        // ขยับออกจากผิวและกำหนดความเร็วเด้ง
-        rb.position += bestNormal * 0.04f;
+        lastWallBounceTime = Time.time;
+
+        // ขยับออกจากกำแพงและกำหนดแรงเด้ง
+        rb.position += wallNormal * 0.04f;
         rb.linearVelocity = outgoing;
 
-        hasBounced = true;
-
-        // ป้องกันดาเมจจนกว่าจะลงพื้นหลังจากเด้ง
-        protectDamageUntilLanding = true;
-        hasLeftGroundAfterBounce = false;
-
-        // สำคัญ: แจ้ง MouseController ว่าเด้งเข้าสู่อากาศแล้ว
+        // แจ้ง MouseController ว่าเกิดการเด้งจากภายนอก
         // ไม่รีเซ็ตสิทธิ์ Double Jump
         if (mouseController != null)
         {
             mouseController.NotifyExternalBounce();
         }
 
-        // ล็อกการควบคุมชั่วคราว ป้องกันระบบอื่นเขียนทับการเด้ง
-        LockControl();
+        return true;
     }
 
     private Vector2 CalculateWallBounce(
@@ -319,35 +349,36 @@ public class ShellWallBounce : MonoBehaviour
 
         float outgoingY = incoming.y;
 
+        // หากกำลังตกชนกำแพง ให้เด้งขึ้น
         if (incoming.y < 0f)
         {
             float gravity = Mathf.Abs(
                 Physics2D.gravity.y * rb.gravityScale
             );
 
-            float speedForTargetHeight = Mathf.Sqrt(
+            float speedForHeight = Mathf.Sqrt(
                 2f * gravity * upwardBounceHeight
             );
 
             outgoingY = Mathf.Max(
-                speedForTargetHeight,
+                speedForHeight,
                 Mathf.Abs(incoming.y) * upwardBounceMultiplier
             );
         }
         else if (incoming.y > 0f)
         {
-            outgoingY = incoming.y * upwardBounceMultiplier;
+            // หากกำลังขึ้น ให้รักษาความเร็วขึ้นไว้
+            outgoingY =
+                incoming.y * upwardBounceMultiplier;
         }
-
-        float maxVerticalSpeed = maximumBounceSpeed * 0.8f;
 
         outgoingY = Mathf.Clamp(
             outgoingY,
-            -maxVerticalSpeed,
-            maxVerticalSpeed
+            -maximumBounceSpeed * 0.8f,
+            maximumBounceSpeed * 0.8f
         );
 
-        float horizontalSpeedBudget = Mathf.Sqrt(
+        float horizontalBudget = Mathf.Sqrt(
             Mathf.Max(
                 0f,
                 maximumBounceSpeed * maximumBounceSpeed -
@@ -357,10 +388,96 @@ public class ShellWallBounce : MonoBehaviour
 
         outgoingX = Mathf.Sign(wallNormal.x) * Mathf.Min(
             Mathf.Abs(outgoingX),
-            horizontalSpeedBudget
+            horizontalBudget
         );
 
         return new Vector2(outgoingX, outgoingY);
+    }
+
+    // --------------------------------------------------
+    // SPACEBAR SHELL FLOOR BOUNCE
+    // --------------------------------------------------
+
+    private void TryShellFloorBounce(Collision2D collision)
+    {
+        // ต้องกด Spacebar เพื่อเปิด Shell ก่อน
+        if (!isProtecting ||
+            hasBounced ||
+            rb == null)
+        {
+            return;
+        }
+
+        // รับเฉพาะ Layer ที่อนุญาตให้ Shell เด้ง
+        if (!IsLayerInMask(collision.gameObject, bounceableLayers))
+        {
+            return;
+        }
+
+        if (collision.contactCount == 0)
+            return;
+
+        Vector2 incoming = velocityBeforePhysics;
+
+        if (incoming.sqrMagnitude < 0.01f)
+        {
+            incoming = rb.linearVelocity;
+        }
+
+        Vector2 floorNormal = Vector2.zero;
+        float strongestImpact = 0f;
+
+        for (int i = 0; i < collision.contactCount; i++)
+        {
+            ContactPoint2D contact = collision.GetContact(i);
+
+            Vector2 normal = GetSurfaceNormal(contact);
+
+            // รับเฉพาะพื้นด้านล่างผู้เล่น ไม่ใช่กำแพงหรือเพดาน
+            if (normal.y < verticalNormalThreshold ||
+                normal.y <= Mathf.Abs(normal.x))
+            {
+                continue;
+            }
+
+            float impact = -Vector2.Dot(incoming, normal);
+
+            if (impact > strongestImpact)
+            {
+                strongestImpact = impact;
+                floorNormal = normal;
+            }
+        }
+
+        if (floorNormal == Vector2.zero ||
+            strongestImpact < minimumImpactSpeed)
+        {
+            return;
+        }
+
+        Vector2 outgoing = CalculateVerticalBounce(
+            incoming,
+            floorNormal
+        );
+
+        if (outgoing.sqrMagnitude < 0.01f)
+            return;
+
+        rb.position += floorNormal * 0.04f;
+        rb.linearVelocity = outgoing;
+
+        hasBounced = true;
+
+        // คงการป้องกันดาเมจจนกว่าจะลงพื้นหลังจากเด้ง
+        protectDamageUntilLanding = true;
+        hasLeftGroundAfterBounce = false;
+
+        if (mouseController != null)
+        {
+            mouseController.NotifyExternalBounce();
+        }
+
+        LockControl();
     }
 
     private Vector2 CalculateVerticalBounce(
@@ -387,12 +504,50 @@ public class ShellWallBounce : MonoBehaviour
         return reflected.normalized * speed;
     }
 
+    // --------------------------------------------------
+    // CONTACT NORMAL
+    // --------------------------------------------------
+
+    private Vector2 GetSurfaceNormal(ContactPoint2D contact)
+    {
+        Vector2 normal = contact.normal.normalized;
+
+        Vector2 toPlayer =
+            rb.worldCenterOfMass - contact.point;
+
+        if (Vector2.Dot(normal, toPlayer) < 0f)
+        {
+            normal = -normal;
+        }
+
+        return normal;
+    }
+
+    // --------------------------------------------------
+    // CONTROL LOCK (SHELL BOUNCE ONLY)
+    // --------------------------------------------------
+
+    private void UpdateControlLock()
+    {
+        if (!controlLocked)
+            return;
+
+        float lockedTime = Time.time - controlLockStartTime;
+
+        if (lockedTime >= controlLockDuration ||
+            lockedTime >= maxControlLockDuration)
+        {
+            UnlockControl();
+        }
+    }
+
     private void LockControl()
     {
         if (mouseController == null || controlLocked)
             return;
 
         previousMovementLocked = mouseController.movementLocked;
+
         mouseController.movementLocked = true;
 
         controlLocked = true;
@@ -402,10 +557,16 @@ public class ShellWallBounce : MonoBehaviour
     private void UnlockControl()
     {
         if (mouseController != null)
+        {
             mouseController.movementLocked = previousMovementLocked;
+        }
 
         controlLocked = false;
     }
+
+    // --------------------------------------------------
+    // DAMAGE PROTECTION
+    // --------------------------------------------------
 
     private void EndProtection()
     {
@@ -420,7 +581,6 @@ public class ShellWallBounce : MonoBehaviour
         return IsProtecting;
     }
 
-    // เติม Shell ที่ Checkpoint
     public void RefillShells()
     {
         remainingUses = maxShellUses;
@@ -437,7 +597,9 @@ public class ShellWallBounce : MonoBehaviour
             Image icon = shellUseIcons[i];
 
             if (icon != null)
+            {
                 icon.gameObject.SetActive(i < remainingUses);
+            }
         }
     }
 
