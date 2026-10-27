@@ -268795,6 +268795,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 476800847902211240, guid: 842d7c4bda4b1f8468b2962890bd7997, type: 3}
+      propertyPath: m_Material
+      value: 
+      objectReference: {fileID: 6200000, guid: f453bfb08b07a4d458b80958d67c34a4, type: 2}
+    - target: {fileID: 476800847902211240, guid: 842d7c4bda4b1f8468b2962890bd7997, type: 3}
       propertyPath: m_Constraints
       value: 4
       objectReference: {fileID: 0}
@@ -268824,11 +268828,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2680815679363196708, guid: 842d7c4bda4b1f8468b2962890bd7997, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -1.0599976
+      value: -61.059998
       objectReference: {fileID: 0}
     - target: {fileID: 2680815679363196708, guid: 842d7c4bda4b1f8468b2962890bd7997, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 26.230011
+      value: 52.23001
       objectReference: {fileID: 0}
     - target: {fileID: 2680815679363196708, guid: 842d7c4bda4b1f8468b2962890bd7997, type: 3}
       propertyPath: m_LocalPosition.z
@@ -268945,6 +268949,10 @@ PrefabInstance:
     - target: {fileID: 6555334657004563476, guid: 842d7c4bda4b1f8468b2962890bd7997, type: 3}
       propertyPath: m_Offset.y
       value: -0.05
+      objectReference: {fileID: 0}
+    - target: {fileID: 6834095295848580416, guid: 842d7c4bda4b1f8468b2962890bd7997, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: -14.7
       objectReference: {fileID: 0}
     - target: {fileID: 6982414652142869839, guid: 842d7c4bda4b1f8468b2962890bd7997, type: 3}
       propertyPath: m_Enabled
@@ -440136,12 +440144,27 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 6035060678866292863, guid: 3420cb19812cf704e91f3ae3327e4268, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1945419062}
+    - targetCorrespondingSourceObject: {fileID: 6035060678866292863, guid: 3420cb19812cf704e91f3ae3327e4268, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2037388780}
   m_SourcePrefab: {fileID: 100100000, guid: 3420cb19812cf704e91f3ae3327e4268, type: 3}
 --- !u!4 &2037388779 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4830337523027511324, guid: 3420cb19812cf704e91f3ae3327e4268, type: 3}
   m_PrefabInstance: {fileID: 2037388778}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &2037388780
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1945419061}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 356cac4228020a04395bf48714654505, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FlipAnimation
 --- !u!1001 &2041022789
 PrefabInstance:
   m_ObjectHideFlags: 0
