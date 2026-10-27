@@ -165301,19 +165301,23 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   protectionDuration: 0.3
+  wallBounceLayers:
+    serializedVersion: 2
+    m_Bits: 0
   horizontalBounceMultiplier: 1.332
   minimumHorizontalBounceSpeed: 13
   upwardBounceHeight: 6
   upwardBounceMultiplier: 1.5
+  wallBounceCooldown: 0.12
+  bounceableLayers:
+    serializedVersion: 2
+    m_Bits: 320
   verticalBounceMultiplier: 1.5
   minimumVerticalBounceSpeed: 13
   maximumBounceSpeed: 40
   minimumImpactSpeed: 2.35
   wallNormalThreshold: 0.7
   verticalNormalThreshold: 0.7
-  bounceableLayers:
-    serializedVersion: 2
-    m_Bits: 320
   controlLockDuration: 0.12
   maxControlLockDuration: 2
 --- !u!114 &389352308
@@ -169646,11 +169650,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2680815679363196708, guid: 842d7c4bda4b1f8468b2962890bd7997, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 20.939999
+      value: -7.5600014
       objectReference: {fileID: 0}
     - target: {fileID: 2680815679363196708, guid: 842d7c4bda4b1f8468b2962890bd7997, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 253.73001
+      value: 5.230011
       objectReference: {fileID: 0}
     - target: {fileID: 2680815679363196708, guid: 842d7c4bda4b1f8468b2962890bd7997, type: 3}
       propertyPath: m_LocalPosition.z
@@ -338317,19 +338321,23 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   protectionDuration: 0.3
+  wallBounceLayers:
+    serializedVersion: 2
+    m_Bits: 0
   horizontalBounceMultiplier: 1
   minimumHorizontalBounceSpeed: 13
   upwardBounceHeight: 6
   upwardBounceMultiplier: 1.5
+  wallBounceCooldown: 0.12
+  bounceableLayers:
+    serializedVersion: 2
+    m_Bits: 320
   verticalBounceMultiplier: 1.5
   minimumVerticalBounceSpeed: 13
   maximumBounceSpeed: 40
   minimumImpactSpeed: 2.35
   wallNormalThreshold: 0.7
   verticalNormalThreshold: 0.7
-  bounceableLayers:
-    serializedVersion: 2
-    m_Bits: 320
   controlLockDuration: 0.12
   maxControlLockDuration: 2
 --- !u!114 &2025782663
