@@ -264538,11 +264538,6 @@ MonoBehaviour:
     m_ColorSpace: -1
     m_NumColorKeys: 5
     m_NumAlphaKeys: 2
-  slipperyFrictionThreshold: 0.15
-  slipperyAcceleration: 18
-  slipperyDeceleration: 2
-  maxSlipperySpeed: 14
-  slopeNormalYThreshold: 0.98
   movementLocked: 0
 --- !u!61 &389352311
 BoxCollider2D:
@@ -439635,9 +439630,14 @@ MonoBehaviour:
   crackedShell: {fileID: 21300000, guid: 73fdfe3bdf34ddf4880920bee25ba2ce, type: 3}
   brokenShell2: {fileID: 21300000, guid: 785d20962afbb6445aee70c338af87ae, type: 3}
   brokenShell1: {fileID: 21300000, guid: 3592b7f919fa0b24b858dcb84d7ef522, type: 3}
+  fadeGroup: {fileID: 0}
+  fadeOutDuration: 0.4
+  blackHoldDuration: 0.15
+  fadeInDuration: 0.4
   shellBreakShardCount: 100
   shellBreakShardSpeed: 200
   shellBreakEffectDuration: 0.6
+  respawnDelay: 0.6
 --- !u!114 &2025782662
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -439745,11 +439745,6 @@ MonoBehaviour:
     m_ColorSpace: -1
     m_NumColorKeys: 5
     m_NumAlphaKeys: 2
-  slipperyFrictionThreshold: 0.15
-  slipperyAcceleration: 18
-  slipperyDeceleration: 2
-  maxSlipperySpeed: 14
-  slopeNormalYThreshold: 0.98
   movementLocked: 0
 --- !u!61 &2025782664
 BoxCollider2D:
