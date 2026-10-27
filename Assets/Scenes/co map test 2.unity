@@ -211,7 +211,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &59388108
 Transform:
   m_ObjectHideFlags: 0
@@ -164883,11 +164883,6 @@ MonoBehaviour:
     m_ColorSpace: -1
     m_NumColorKeys: 5
     m_NumAlphaKeys: 2
-  slipperyFrictionThreshold: 0.15
-  slipperyAcceleration: 18
-  slipperyDeceleration: 2
-  maxSlipperySpeed: 14
-  slopeNormalYThreshold: 0.98
   movementLocked: 0
 --- !u!61 &389352311
 BoxCollider2D:
@@ -169202,6 +169197,10 @@ PrefabInstance:
       propertyPath: enableHorizontalMovement
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 2986131724201444033, guid: 842d7c4bda4b1f8468b2962890bd7997, type: 3}
+      propertyPath: slipperyFrictionThreshold
+      value: 0.155
+      objectReference: {fileID: 0}
     - target: {fileID: 3634987196491609689, guid: 842d7c4bda4b1f8468b2962890bd7997, type: 3}
       propertyPath: m_Enabled
       value: 1
@@ -169226,6 +169225,10 @@ PrefabInstance:
       propertyPath: m_LocalPosition.y
       value: -0.764
       objectReference: {fileID: 0}
+    - target: {fileID: 6555334657004563476, guid: 842d7c4bda4b1f8468b2962890bd7997, type: 3}
+      propertyPath: m_Material
+      value: 
+      objectReference: {fileID: 6200000, guid: f453bfb08b07a4d458b80958d67c34a4, type: 2}
     - target: {fileID: 6555334657004563476, guid: 842d7c4bda4b1f8468b2962890bd7997, type: 3}
       propertyPath: m_Offset.x
       value: 0
@@ -172886,7 +172889,7 @@ Rigidbody2D:
   m_LinearDamping: 0
   m_AngularDamping: 0.05
   m_GravityScale: 1
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 6200000, guid: 6f21079cb4e13614eacc27e8b60e3c83, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -339026,11 +339029,6 @@ MonoBehaviour:
     m_ColorSpace: -1
     m_NumColorKeys: 5
     m_NumAlphaKeys: 2
-  slipperyFrictionThreshold: 0.15
-  slipperyAcceleration: 18
-  slipperyDeceleration: 2
-  maxSlipperySpeed: 14
-  slopeNormalYThreshold: 0.98
   movementLocked: 0
 --- !u!61 &2025782664
 BoxCollider2D:
