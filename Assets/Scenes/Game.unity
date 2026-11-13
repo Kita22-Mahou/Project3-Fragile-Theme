@@ -3036,6 +3036,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f3fe7ec70c646b2428dbc7c96b1afdbe, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TumiMouseAimController
+  animator: {fileID: 0}
+  enableHorizontalMovement: 1
   moveSpeed: 10
   groundCheck: {fileID: 471497140}
   groundCheckSize: {x: 0.9, y: 0.2}
@@ -3048,6 +3050,11 @@ MonoBehaviour:
   maxJumpForce: 36
   maxChargeTime: 0.7
   jumpForwardForce: 14
+  enableAirDoubleJump: 1
+  externalBounceGroundIgnoreDuration: 0.25
+  enableSlowFall: 1
+  slowFallSpeed: 2
+  stopBeforeJump: 1
   minAimAngle: 30
   maxAimAngle: 150
   trajectoryPoint: {fileID: 1851486974}
@@ -3088,6 +3095,7 @@ MonoBehaviour:
     m_ColorSpace: -1
     m_NumColorKeys: 5
     m_NumAlphaKeys: 2
+  movementLocked: 0
 --- !u!114 &1921047361
 MonoBehaviour:
   m_ObjectHideFlags: 0
