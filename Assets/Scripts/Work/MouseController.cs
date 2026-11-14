@@ -356,12 +356,14 @@ public class MouseController : MonoBehaviour
             return;
         }
 
-        isGrounded = Physics2D.OverlapBox(
-            groundCheck.position,
-            groundCheckSize,
-            0f,
-            groundLayer
-        ) != null;
+        if (Physics2D.OverlapBox(groundCheck.position, groundCheckSize, 0f, groundLayer) != null)
+        {
+            isGrounded = true;
+        }
+        else
+        {
+            isGrounded = false;
+        }
     }
 
     private void UpdateJumpState()

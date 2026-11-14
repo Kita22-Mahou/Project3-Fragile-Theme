@@ -302224,6 +302224,11 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 8806305199917051389, guid: 95194a375ae650141abed788246d717d, type: 3}
   m_PrefabInstance: {fileID: 834694488}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &861314003 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7509916465776107902, guid: 842d7c4bda4b1f8468b2962890bd7997, type: 3}
+  m_PrefabInstance: {fileID: 1904830750}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &863644856
 GameObject:
   m_ObjectHideFlags: 0
@@ -483988,11 +483993,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 470840695257273386, guid: 842d7c4bda4b1f8468b2962890bd7997, type: 3}
       propertyPath: m_AnchorMax.x
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 470840695257273386, guid: 842d7c4bda4b1f8468b2962890bd7997, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 476800847902211240, guid: 842d7c4bda4b1f8468b2962890bd7997, type: 3}
       propertyPath: m_Constraints
@@ -484004,7 +484009,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 575981481425895883, guid: 842d7c4bda4b1f8468b2962890bd7997, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -0.844
+      value: -0.684
       objectReference: {fileID: 0}
     - target: {fileID: 612568690586615109, guid: 842d7c4bda4b1f8468b2962890bd7997, type: 3}
       propertyPath: m_Enabled
@@ -484090,6 +484095,10 @@ PrefabInstance:
       propertyPath: chargeBar
       value: 
       objectReference: {fileID: 1904830752}
+    - target: {fileID: 2986131724201444033, guid: 842d7c4bda4b1f8468b2962890bd7997, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2986131724201444033, guid: 842d7c4bda4b1f8468b2962890bd7997, type: 3}
       propertyPath: groundCheck
       value: 
@@ -484202,15 +484211,23 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tumi Test
       objectReference: {fileID: 0}
+    - target: {fileID: 7509916465776107902, guid: 842d7c4bda4b1f8468b2962890bd7997, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents:
     - {fileID: 3634987196491609689, guid: 842d7c4bda4b1f8468b2962890bd7997, type: 3}
     - {fileID: 6982414652142869839, guid: 842d7c4bda4b1f8468b2962890bd7997, type: 3}
+    - {fileID: 2986131724201444033, guid: 842d7c4bda4b1f8468b2962890bd7997, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects:
     - targetCorrespondingSourceObject: {fileID: 2680815679363196708, guid: 842d7c4bda4b1f8468b2962890bd7997, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1868059813}
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 7509916465776107902, guid: 842d7c4bda4b1f8468b2962890bd7997, type: 3}
+      insertIndex: 3
+      addedObject: {fileID: 1904830757}
   m_SourcePrefab: {fileID: 100100000, guid: 842d7c4bda4b1f8468b2962890bd7997, type: 3}
 --- !u!114 &1904830751 stripped
 MonoBehaviour:
@@ -484254,6 +484271,37 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 2680815679363196708, guid: 842d7c4bda4b1f8468b2962890bd7997, type: 3}
   m_PrefabInstance: {fileID: 1904830750}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1904830757
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 861314003}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a062b844e9f41ed41a0577ef2cf699be, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerController
+  animator: {fileID: 0}
+  isOnGround: 0
+  isJumped: 0
+  groundCheckPoint: {fileID: 1904830755}
+  groundCheckX: 0.5
+  groundCheckY: 0.3
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 64
+  minJumpForce: 10
+  maxJumpForce: 26
+  maxChargeTime: 0.7
+  jumpForwardForce: 14
+  minAimAngle: 15
+  maxAimAngle: 165
+  trajectoryPoint: {fileID: 0}
+  trajectoryDotPrefab: {fileID: 0}
+  trajectoryDotCount: 36
+  trajectoryTimeStep: 0.05
 --- !u!1 &1910128580
 GameObject:
   m_ObjectHideFlags: 0
