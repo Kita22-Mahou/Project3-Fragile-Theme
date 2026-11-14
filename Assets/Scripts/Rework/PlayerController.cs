@@ -76,7 +76,9 @@ public class PlayerController : MonoBehaviour
             Aiming();
         }
         if (Input.GetMouseButtonUp(0) && isOnGround && jumpState == JumpState.OnGround)
-
+        {
+            Jump();
+        }
         Grounded();
     }
 
@@ -114,6 +116,7 @@ public class PlayerController : MonoBehaviour
 
         UpdateAimFromMouse();
     }
+
 
     private Vector2 GetDefaultAimDirection()
     {
