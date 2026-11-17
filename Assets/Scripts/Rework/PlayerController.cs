@@ -243,7 +243,6 @@ public class PlayerController : MonoBehaviour
         isOnGround = true;
         isJumped = false;
         isJumpedFromGround = false;
-        canAirJump = false;
 
         if (isAirAiming)
         {
