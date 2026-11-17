@@ -10,7 +10,7 @@ public class Hazard : MonoBehaviour
 
     [SerializeField] private float reactivationCooldown = 1.25f;
 
-    private readonly HashSet<MouseController> playersProcessing = new HashSet<MouseController>();
+    private readonly HashSet<PlayerController> playersProcessing = new HashSet<PlayerController>();
 
 
     private void Reset()
@@ -37,7 +37,7 @@ public class Hazard : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D other)
     {
-        MouseController player = other.GetComponentInParent<MouseController>();
+        PlayerController player = other.GetComponentInParent<PlayerController>();
 
         if (player == null || !playersProcessing.Add(player))
         {
@@ -88,7 +88,7 @@ public class Hazard : MonoBehaviour
     }
 
 
-    private IEnumerator ReleaseCooldown(MouseController player)
+    private IEnumerator ReleaseCooldown(PlayerController player)
     {
         yield return new WaitForSecondsRealtime(
             Mathf.Max(respawnDelay, reactivationCooldown)
