@@ -63,6 +63,10 @@ public class PlayerController : MonoBehaviour
     private Rigidbody2D rb;
     private Camera mainCamera;
 
+    [Header("Health Integration")]
+    public bool movementLocked = false;
+    public float jumpPowerMultiplier = 1f;
+
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
@@ -84,6 +88,24 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
+        // ล็อกการควบคุมระหว่างตายหรือกำลัง Respawn
+        if (movementLocked)
+        {
+            Time.timeScale = 1f;
+
+            isAiming = false;
+            isAirAiming = false;
+            jumpChargeTime = 0f;
+
+            if (rb != null)
+            {
+                rb.linearVelocity = Vector2.zero;
+            }
+
+            HideJumpTrajectory();
+            return;
+        }
+
         // การกด mouse
         if (Input.GetMouseButtonDown(0))          // กดเพื่อ Aim
         {
@@ -310,10 +332,12 @@ public class PlayerController : MonoBehaviour
             GetChargePercent()
         );
 
-        return new Vector2(
+        float basePower = new Vector2(
             jumpForwardForce,
             jumpForce
-        ).magnitude * 1;//SlowJumpSpeedMultiplier;
+        ).magnitude;
+
+        return basePower * jumpPowerMultiplier;
     }
 
     private float GetChargePercent()
@@ -451,4 +475,37 @@ public class PlayerController : MonoBehaviour
             animator.Play("PlayerInAir");
         }
     }
+
+
+    // เรียกจาก HealthNew หลังเกิดใหม่
+    public void ResetAfterRespawn()
+    {
+        movementLocked = false;
+
+        jumpState = JumpState.OnGround;
+
+        isOnGround = false;
+        isAiming = false;
+        isJumped = false;
+        isAirAiming = false;
+
+        isJumpedFromGround = false;
+        canAirJump = true;
+
+        jumpChargeTime = 0f;
+        jumpPowerMultiplier = 1f;
+
+        aimDirection = Vector2.up;
+
+        Time.timeScale = 1f;
+
+        if (rb != null)
+        {
+            rb.linearVelocity = Vector2.zero;
+            rb.angularVelocity = 0f;
+        }
+
+        HideJumpTrajectory();
+    }
+
 }

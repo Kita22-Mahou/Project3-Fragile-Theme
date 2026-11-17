@@ -424,12 +424,9 @@ GameObject:
   - component: {fileID: 2680815679363196708}
   - component: {fileID: 612568690586615109}
   - component: {fileID: 476800847902211240}
-  - component: {fileID: 2986131724201444033}
   - component: {fileID: 750526545227959846}
   - component: {fileID: 3853071931027233701}
   - component: {fileID: 6555334657004563476}
-  - component: {fileID: 3634987196491609689}
-  - component: {fileID: 6982414652142869839}
   m_Layer: 7
   m_Name: Tumi
   m_TagString: Player
@@ -544,82 +541,6 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 1
   m_Constraints: 4
---- !u!114 &2986131724201444033
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7509916465776107902}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f3fe7ec70c646b2428dbc7c96b1afdbe, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::TumiMouseAimController
-  enableHorizontalMovement: 1
-  moveSpeed: 10
-  groundCheck: {fileID: 575981481425895883}
-  groundCheckSize: {x: 1.7, y: 0.2}
-  groundCheckRadius: 0.3
-  groundLayer:
-    serializedVersion: 2
-    m_Bits: 64
-  isGrounded: 0
-  minJumpForce: 13
-  maxJumpForce: 50
-  maxChargeTime: 1
-  jumpForwardForce: 14
-  enableAirDoubleJump: 1
-  externalBounceGroundIgnoreDuration: 0.25
-  enableSlowFall: 1
-  slowFallSpeed: 2
-  stopBeforeJump: 1
-  minAimAngle: 30
-  maxAimAngle: 150
-  trajectoryPoint: {fileID: 527821410507798739}
-  trajectoryDotPrefab: {fileID: 1843257253224819756, guid: 3ef3f55c88efe5641ab91e6d075b3313, type: 3}
-  trajectoryDotCount: 4
-  trajectoryTimeStep: 0.05
-  playerSprite: {fileID: 527660575282829913}
-  facingDirection: 1
-  chargeBar: {fileID: 0}
-  chargeBarHandle: {fileID: 0}
-  chargeColor:
-    serializedVersion: 2
-    key0: {r: 0.20960975, g: 1, b: 0, a: 1}
-    key1: {r: 0.8087251, g: 1, b: 0, a: 1}
-    key2: {r: 1, g: 0.9372188, b: 0, a: 0}
-    key3: {r: 1, g: 0.5064901, b: 0.02352941, a: 0}
-    key4: {r: 1, g: 0, b: 0.046356082, a: 0}
-    key5: {r: 0, g: 0, b: 0, a: 0}
-    key6: {r: 0, g: 0, b: 0, a: 0}
-    key7: {r: 0, g: 0, b: 0, a: 0}
-    ctime0: 0
-    ctime1: 18504
-    ctime2: 32768
-    ctime3: 49151
-    ctime4: 65535
-    ctime5: 0
-    ctime6: 0
-    ctime7: 0
-    atime0: 0
-    atime1: 65535
-    atime2: 0
-    atime3: 0
-    atime4: 0
-    atime5: 0
-    atime6: 0
-    atime7: 0
-    m_Mode: 0
-    m_ColorSpace: -1
-    m_NumColorKeys: 5
-    m_NumAlphaKeys: 2
-  slipperyFrictionThreshold: 0.15
-  slipperyAcceleration: 18
-  slipperyDeceleration: 2
-  maxSlipperySpeed: 14
-  slopeNormalYThreshold: 0.98
-  movementLocked: 0
 --- !u!114 &750526545227959846
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -683,9 +604,14 @@ MonoBehaviour:
   crackedShell: {fileID: 21300000, guid: 73fdfe3bdf34ddf4880920bee25ba2ce, type: 3}
   brokenShell2: {fileID: 21300000, guid: 785d20962afbb6445aee70c338af87ae, type: 3}
   brokenShell1: {fileID: 21300000, guid: 3592b7f919fa0b24b858dcb84d7ef522, type: 3}
+  fadeGroup: {fileID: 0}
+  fadeOutDuration: 0.4
+  blackHoldDuration: 0.15
+  fadeInDuration: 0.4
   shellBreakShardCount: 100
   shellBreakShardSpeed: 200
   shellBreakEffectDuration: 0.6
+  respawnDelay: 0.6
 --- !u!58 &6555334657004563476
 CircleCollider2D:
   m_ObjectHideFlags: 0
@@ -722,78 +648,6 @@ CircleCollider2D:
   m_CompositeOrder: 0
   m_Offset: {x: 0.0022940636, y: 0.016065478}
   m_Radius: 0.8301654
---- !u!58 &3634987196491609689
-CircleCollider2D:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7509916465776107902}
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Density: 1
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_ForceSendLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_ForceReceiveLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_ContactCaptureLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_CallbackLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_IsTrigger: 0
-  m_UsedByEffector: 0
-  m_CompositeOperation: 0
-  m_CompositeOrder: 0
-  m_Offset: {x: -0.1973753, y: -0.7619631}
-  m_Radius: 0.14164352
---- !u!58 &6982414652142869839
-CircleCollider2D:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7509916465776107902}
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Density: 1
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_ForceSendLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_ForceReceiveLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_ContactCaptureLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_CallbackLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_IsTrigger: 0
-  m_UsedByEffector: 0
-  m_CompositeOperation: 0
-  m_CompositeOrder: 0
-  m_Offset: {x: 0.34655604, y: -0.7619633}
-  m_Radius: 0.12557799
 --- !u!1 &8725308778767603402
 GameObject:
   m_ObjectHideFlags: 0

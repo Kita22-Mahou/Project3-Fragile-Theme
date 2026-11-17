@@ -49,7 +49,7 @@ public class Checkpoint : MonoBehaviour
     private void OnTriggerEnter2D(Collider2D other)
     {
         // ตรวจสอบว่าผู้เล่นมี MouseController หรือไม่
-        MouseController player = other.GetComponentInParent<MouseController>();
+        PlayerController player = other.GetComponentInParent<PlayerController>();
 
         if (player == null)
         {
@@ -131,7 +131,7 @@ public class Checkpoint : MonoBehaviour
         }
         else
         {
-            MouseController controller = player.GetComponent<MouseController>();
+            PlayerController controller = player.GetComponent<PlayerController>();
 
             if (controller != null)
             {

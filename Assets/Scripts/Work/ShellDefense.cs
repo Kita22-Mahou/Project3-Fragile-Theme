@@ -1,58 +1,62 @@
-
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
 
+// Turtle Shell Bounce
+// กด Space ตอนกำลังตก/พุ่งชน -> เปิดการป้องกันดาเมจ ถ้าชนภายในเวลาที่กำหนดจะสะท้อนออกจากผิว
+// ใช้ได้จนกว่า Shell จะหมด
 public class ShellDefense : MonoBehaviour
 {
     [Header("Shell Charges")]
-    // จำนวนครั้งสูงสุดที่ใช้ Shell Bounce ได้
-    // เริ่มเกมจะมี Shell ตามจำนวนนี้ เช่น 3 = ใช้ได้ 3 ครั้ง
+    // จำนวน Shell ตอนเริ่มเกม เช่น 3 = 3/3
     [SerializeField] private int maxShellUses = 3;
 
 
     [Header("Protection")]
-    // ระยะเวลาที่ระบบรอให้ผู้เล่นชนพื้นผิวหลังจากกด Space
+    // เวลาที่รอให้ชนหลังกด Space
     // หากหมดเวลาก่อนชน จะเสีย Shell ไปโดยไม่ได้เด้ง
     [SerializeField] private float protectionDuration = 0.75f;
 
 
     [Header("Bounce Settings")]
-    // ตัวคูณความเร็วเด้ง ยิ่งมากยิ่งเด้งแรง
-    // เช่น 1.1 = ใช้ความเร็วขาเข้าคูณ 1.1 ก่อนจำกัดความเร็ว
+    // ตัวคูณความเร็วเด้ง (1.1 = ใช้ความเร็วขาเข้า x 1.1 ก่อนจำกัดความเร็ว)
     [SerializeField] private float bounceMultiplier = 1.1f;
 
-    // ความเร็วเด้งขั้นต่ำ เพื่อให้เด้งออกจากพื้นผิวได้ชัดเจน
-    // เพิ่มค่านี้หากรู้สึกว่าเด้งเบาเกินไป
+    // ความเร็วเด้งขั้นต่ำ เพิ่มค่านี้หากรู้สึกว่าเด้งเบาเกินไป
     [SerializeField] private float minimumBounceSpeed = 16f;
 
-    // ความเร็วเด้งสูงสุด ป้องกันไม่ให้ตัวละครพุ่งเร็วเกินไป
-    // ลดค่านี้หากรู้สึกว่าเด้งแรงหรือไกลเกินไป
+    // ความเร็วเด้งสูงสุด ลดค่านี้หากรู้สึกว่าเด้งแรงเกินไป
     [SerializeField] private float maximumBounceSpeed = 22f;
 
-    // สัดส่วนการเด้งขึ้นด้านบนขั้นต่ำ ตั้งแต่ 0 ถึง 1
-    // 0.65 = บังคับให้ทิศเด้งมีองค์ประกอบขึ้นด้านบนอย่างน้อยตามสัดส่วนนี้
-    // เพิ่มค่านี้เพื่อเน้นการเด้งขึ้น ลดค่านี้เพื่อให้ทิศทางแนวราบมีผลมากขึ้น
-    [Range(0f, 1f)]
-    [SerializeField] private float minimumUpwardRatio = 0.65f;
-
-    // ระยะเวลาที่ปิด MouseController หลังเด้ง
-    // ช่วยไม่ให้ระบบเดินเขียนทับความเร็วเด้งทันที
-    // ลดค่านี้หากรู้สึกว่าควบคุมตัวละครกลับมาช้าเกินไป
+    // เวลาขั้นต่ำที่ล็อกการเดินของ MouseController หลังเด้ง (วินาที)
+    // หลังจากนั้นจะล็อกต่อจนกว่าจะลงพื้น กันไม่ให้ระบบเดินเขียนทับความเร็วเด้ง
     [SerializeField] private float controlLockDuration = 0.12f;
+
+    // เวลาล็อกสูงสุด กันกรณีที่ไม่เคยแตะพื้น
+    [SerializeField] private float maxControlLockDuration = 2f;
+
+    // ช่วงเวลา (วินาที) ที่จำความเร็วก่อนชนไว้ใช้คำนวณมุมสะท้อน
+    // ทำให้กด Space หลังชนเล็กน้อย (ขณะยังแนบผิวอยู่) ก็ยังสะท้อนตามมุมที่พุ่งเข้ามาจริง
+    [SerializeField] private float impactMemoryTime = 0.3f;
+
+
+    [Header("Debug")]
+    // เปิดเพื่อพิมพ์ความเร็วขาเข้า / normal / ความเร็วขาออก ลง Console ทุกครั้งที่เด้ง
+    [SerializeField] private bool debugBounce = false;
 
 
     [Header("Activation")]
-    // ความเร็วขั้นต่ำที่ใช้แยกว่าตัวละครกำลังเคลื่อนที่หรือยืนนิ่ง
-    // หากสัมผัสพื้นและความเร็วต่ำกว่าค่านี้ จะไม่ใช้ Shell
-    // เพิ่มค่านี้เพื่อให้ต้องเคลื่อนที่เร็วขึ้นก่อนจึงใช้ Shell ได้
+    // ความเร็วขั้นต่ำที่ต้องมีจึงจะกด Space ใช้ Shell ได้
+    // กันการเสีย Shell ตอนยืนนิ่ง ๆ
     [SerializeField] private float minimumMovementToActivate = 0.5f;
+
 
     [Header("Shell UI Icons")]
     [SerializeField] private Image[] shellUseIcons = new Image[3];
 
     private Rigidbody2D rb;
     private MouseController mouseController;
+    private HealthNew health;
 
     private int remainingUses;
     private float protectionTimer;
@@ -60,16 +64,18 @@ public class ShellDefense : MonoBehaviour
     private bool isProtecting;
     private bool hasBounced;
 
-    private Vector2 velocityBeforePhysics;
+    // ความเร็วล่าสุดตอนที่ยังไม่แตะอะไรเลย (ใช้เป็นความเร็วขาเข้าคำนวณมุมสะท้อน)
+    private Vector2 approachVelocity;
+    private float approachTime;
 
-    private readonly System.Collections.Generic.HashSet<Collider2D>
-        groundContacts =
-            new System.Collections.Generic.HashSet<Collider2D>();
+    // Collider ที่กำลังสัมผัสอยู่ ใช้บอกว่าตอนนี้ "ยังไม่ชน" หรือไม่
+    private readonly System.Collections.Generic.HashSet<Collider2D> touching =
+        new System.Collections.Generic.HashSet<Collider2D>();
 
-    private Coroutine controlLockCoroutine;
     private Coroutine endProtectionCoroutine;
 
-    private bool controllerWasEnabled;
+    private bool controlLocked;
+    private float controlLockStartTime;
 
     public int RemainingUses => remainingUses;
     public int MaxShellUses => maxShellUses;
@@ -82,33 +88,47 @@ public class ShellDefense : MonoBehaviour
 
         bounceMultiplier = Mathf.Max(0f, bounceMultiplier);
         minimumBounceSpeed = Mathf.Max(0f, minimumBounceSpeed);
-
-        maximumBounceSpeed = Mathf.Max(minimumBounceSpeed,maximumBounceSpeed);
+        maximumBounceSpeed = Mathf.Max(minimumBounceSpeed, maximumBounceSpeed);
+        maxControlLockDuration = Mathf.Max(controlLockDuration, maxControlLockDuration);
 
         remainingUses = maxShellUses;
 
         rb = GetComponent<Rigidbody2D>();
         mouseController = GetComponent<MouseController>();
+        health = GetComponent<HealthNew>();
 
         if (rb != null)
-            velocityBeforePhysics = rb.linearVelocity;
+        {
+            approachVelocity = rb.linearVelocity;
+            approachTime = Time.time;
+        }
 
         UpdateShellIcons();
     }
 
     private void Update()
     {
-        // กด Space หนึ่งครั้งเพื่อเตรียมเด้ง
         if (Input.GetKeyDown(KeyCode.Space))
             ActivateShellBounce();
 
-        //ยกเลิกการป้องกัน
         if (isProtecting)
         {
             protectionTimer -= Time.deltaTime;
 
             if (protectionTimer <= 0f)
                 EndProtection();
+        }
+
+        // ปลดล็อกการเดินเมื่อลงพื้น (หลังพ้นเวลาขั้นต่ำ) หรือครบเวลาสูงสุด
+        if (controlLocked)
+        {
+            float lockedFor = Time.time - controlLockStartTime;
+
+            if (lockedFor >= maxControlLockDuration ||
+                (lockedFor >= controlLockDuration && mouseController != null && mouseController.isGrounded))
+            {
+                UnlockControl();
+            }
         }
     }
 
@@ -117,7 +137,15 @@ public class ShellDefense : MonoBehaviour
         if (rb == null)
             return;
 
-        velocityBeforePhysics = rb.linearVelocity;
+        touching.RemoveWhere(col => col == null || !col.enabled);
+
+        // บันทึกความเร็วเฉพาะตอนที่ยังไม่ได้สัมผัสอะไร
+        // พอชนแล้ว Physics จะหักล้างความเร็วทิ้ง จึงต้องจำค่าก่อนชนไว้ใช้
+        if (touching.Count == 0)
+        {
+            approachVelocity = rb.linearVelocity;
+            approachTime = Time.time;
+        }
     }
 
     private void ActivateShellBounce()
@@ -125,12 +153,8 @@ public class ShellDefense : MonoBehaviour
         if (remainingUses <= 0 || rb == null || isProtecting)
             return;
 
-        // ไม่ใช้ Shell หากยืนเฉย ๆ บนพื้น
-        bool standingStill =
-            HasGroundContact() &&
-            rb.linearVelocity.magnitude < minimumMovementToActivate;
-
-        if (standingStill)
+        // ไม่ใช้ Shell หากแทบไม่เคลื่อนที่
+        if (rb.linearVelocity.magnitude < minimumMovementToActivate)
             return;
 
         remainingUses--;
@@ -142,58 +166,38 @@ public class ShellDefense : MonoBehaviour
         UpdateShellIcons();
     }
 
-    private bool HasGroundContact()
-    {
-        groundContacts.RemoveWhere(
-            col => col == null || !col.enabled
-        );
-
-        return groundContacts.Count > 0;
-    }
-
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        TrackGroundContact(collision);
+        if (collision.collider != null)
+            touching.Add(collision.collider);
+
         TryBounce(collision);
     }
 
     private void OnCollisionStay2D(Collision2D collision)
     {
-        TrackGroundContact(collision);
+        if (collision.collider != null)
+            touching.Add(collision.collider);
+
         TryBounce(collision);
     }
 
     private void OnCollisionExit2D(Collision2D collision)
     {
         if (collision.collider != null)
-            groundContacts.Remove(collision.collider);
+            touching.Remove(collision.collider);
     }
 
+    // ให้ normal ชี้ออกจากผิวมาทางผู้เล่นเสมอ
     private Vector2 GetNormalTowardsPlayer(ContactPoint2D contact)
     {
         Vector2 normal = contact.normal.normalized;
         Vector2 directionToPlayer = rb.worldCenterOfMass - contact.point;
 
-        if (Vector2.Dot(normal, directionToPlayer) < 0f) normal = -normal;
+        if (Vector2.Dot(normal, directionToPlayer) < 0f)
+            normal = -normal;
 
         return normal;
-    }
-
-    private void TrackGroundContact(Collision2D collision)
-    {
-        if (rb == null || collision.collider == null)
-            return;
-
-        for (int i = 0; i < collision.contactCount; i++)
-        {
-            Vector2 normal = GetNormalTowardsPlayer(collision.GetContact(i));
-
-            if (normal.y > 0.5f)
-            {
-                groundContacts.Add(collision.collider);
-                return;
-            }
-        }
     }
 
     private void TryBounce(Collision2D collision)
@@ -204,16 +208,19 @@ public class ShellDefense : MonoBehaviour
         if (collision.contactCount == 0)
             return;
 
-        Vector2 incomingVelocity = velocityBeforePhysics;
+        // ใช้ความเร็วก่อนชนที่จำไว้ ถ้าเพิ่งชนไม่นาน (impactMemoryTime)
+        // ถ้าแนบผิวมานานแล้ว ใช้ความเร็วปัจจุบันแทน
+        Vector2 incomingVelocity =
+            (Time.time - approachTime <= impactMemoryTime)
+                ? approachVelocity
+                : rb.linearVelocity;
         Vector2 bestNormal = Vector2.zero;
         float bestImpact = float.NegativeInfinity;
 
-        // เลือกผิวที่เหมาะสมที่สุดสำหรับการสะท้อน
+        // เลือกผิวที่ชนแรงที่สุดเป็นตัวสะท้อน
         for (int i = 0; i < collision.contactCount; i++)
         {
-            ContactPoint2D contact = collision.GetContact(i);
-            Vector2 normal = GetNormalTowardsPlayer(contact);
-
+            Vector2 normal = GetNormalTowardsPlayer(collision.GetContact(i));
             float impact = -Vector2.Dot(incomingVelocity, normal);
 
             if (impact > bestImpact)
@@ -226,39 +233,42 @@ public class ShellDefense : MonoBehaviour
         if (bestNormal == Vector2.zero)
             return;
 
-        // กรณีแทบไม่มีความเร็ว ให้ผลักออกจากผิวโดยตรง
+        // แทบไม่มีความเร็วเข้าหาผิว -> ผลักออกจากผิวตรง ๆ
         if (incomingVelocity.sqrMagnitude < 0.01f ||
             Vector2.Dot(incomingVelocity, bestNormal) >= -0.1f)
         {
             incomingVelocity = -bestNormal * minimumBounceSpeed;
         }
 
+        // สะท้อนตามมุมชนจริง: เพดานเด้งลง, พื้นเด้งขึ้น, ผนังเด้งกลับ
         Vector2 reflectedDirection = Vector2.Reflect(
             incomingVelocity.normalized,
             bestNormal
         ).normalized;
 
-        // ชนพื้นหรือกำแพงให้เด้งขึ้น
-        // ชนใต้เพดานให้เด้งออกจากผิว
-        if (bestNormal.y > -0.5f)
-        {
-            float upward = Mathf.Clamp01(Mathf.Max(Mathf.Abs(reflectedDirection.y),minimumUpwardRatio ));
+        float launchSpeed = Mathf.Clamp(
+            incomingVelocity.magnitude * bounceMultiplier,
+            minimumBounceSpeed,
+            maximumBounceSpeed
+        );
 
-            reflectedDirection = new Vector2(reflectedDirection.x,upward).normalized;
+        if (debugBounce)
+        {
+            Debug.Log(
+                $"[ShellDefense] incoming={incomingVelocity} normal={bestNormal} " +
+                $"outgoing={reflectedDirection * launchSpeed} surface={collision.collider.name}"
+            );
         }
 
-        float launchSpeed = Mathf.Clamp(incomingVelocity.magnitude * bounceMultiplier, minimumBounceSpeed, maximumBounceSpeed);
-
-        Vector2 outgoingVelocity = reflectedDirection * launchSpeed;
-
+        // ดันออกจากผิวเล็กน้อยกันตัวละครจมผิว
         rb.position += bestNormal * 0.03f;
-        rb.linearVelocity = outgoingVelocity;
+        rb.linearVelocity = reflectedDirection * launchSpeed;
 
         hasBounced = true;
 
-        LockControlBriefly();
+        LockControl();
 
-        // ให้ HealthPoint มีเวลาตรวจป้องกันดาเมจในรอบชนนี้
+        // ให้ HealthPoint มีเวลาตรวจ TryBlockDamage ในรอบชนนี้ก่อนปิดการป้องกัน
         if (endProtectionCoroutine != null)
             StopCoroutine(endProtectionCoroutine);
 
@@ -281,29 +291,25 @@ public class ShellDefense : MonoBehaviour
         endProtectionCoroutine = null;
     }
 
-    private void LockControlBriefly()
+    // ล็อกเฉพาะการเดิน (Move) ของ MouseController ไม่ปิดทั้งสคริปต์
+    // เพื่อให้ ground check และ jump state ยังทำงานต่อได้ตามปกติ
+    private void LockControl()
     {
-        if (mouseController == null || !mouseController.enabled)
+        if (mouseController == null)
             return;
 
-        controllerWasEnabled = true;
-        mouseController.enabled = false;
-
-        if (controlLockCoroutine != null)
-            StopCoroutine(controlLockCoroutine);
-
-        controlLockCoroutine = StartCoroutine(RestoreControlAfterBounce());
+        mouseController.movementLocked = true;
+        controlLocked = true;
+        controlLockStartTime = Time.time;
     }
 
-    private IEnumerator RestoreControlAfterBounce()
+    private void UnlockControl()
     {
-        yield return new WaitForSeconds(controlLockDuration);
+        // ถ้าตายอยู่ HealthNew เป็นคนล็อกการเดิน ห้ามปลดล็อกแทน
+        if (mouseController != null && (health == null || !health.IsDead))
+            mouseController.movementLocked = false;
 
-        if (mouseController != null && controllerWasEnabled)
-            mouseController.enabled = true;
-
-        controllerWasEnabled = false;
-        controlLockCoroutine = null;
+        controlLocked = false;
     }
 
     // HealthPoint เรียกก่อนหัก HP
@@ -312,7 +318,7 @@ public class ShellDefense : MonoBehaviour
         return isProtecting;
     }
 
-    // ใช้เติม Shell เมื่อถึง Checkpoint ในอนาคต
+    // ใช้เติม Shell เมื่อถึง Checkpoint
     public void RefillShells()
     {
         remainingUses = maxShellUses;
@@ -337,16 +343,8 @@ public class ShellDefense : MonoBehaviour
 
     private void OnDisable()
     {
-        if (controlLockCoroutine != null)
-        {
-            StopCoroutine(controlLockCoroutine);
-            controlLockCoroutine = null;
-
-            if (mouseController != null && controllerWasEnabled)
-                mouseController.enabled = true;
-
-            controllerWasEnabled = false;
-        }
+        UnlockControl();
+        touching.Clear();
 
         if (endProtectionCoroutine != null)
         {

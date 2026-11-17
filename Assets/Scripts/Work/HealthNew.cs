@@ -22,15 +22,50 @@ public class HealthNew : MonoBehaviour
 
     [SerializeField] private LayerMask ignoreDamageLayers;
 
-    [SerializeField] private float safeImpactSpeed = 10f;
+    // ความเร็วชนที่ปลอดภัย ควรมากกว่าความเร็วกระโดดสูงสุดของ PlayerController
+    // (ประมาณ sqrt(jumpForwardForce^2 + maxJumpForce^2) = ~29.5 ตามค่าปัจจุบัน)
+    // เพื่อให้กระโดดลงพื้นระดับเดิมตามปกติไม่เสีย HP
+    [SerializeField] private float safeImpactSpeed = 30f;
 
     [SerializeField] private float damagePerSpeed = 2f;
 
     [SerializeField] private float maxCollisionDamage = 20f;
 
+    // ดาเมจที่ต่ำกว่าค่านี้ถือเป็นแค่การกระทบเบา ๆ จะไม่หัก HP
+    [SerializeField] private float minCollisionDamage = 1f;
+
     [Header("Wall Collision")]
 
     [SerializeField] private float minVerticalSpeedForWallDamage = 1f;
+
+    [Header("Illness (Outside Save Zone)")]
+    [Tooltip("Tumi ป่วย: อยู่นอก SaveZone จะเสีย HP ต่อเนื่อง")]
+    [SerializeField] private bool illnessEnabled = true;
+
+    // ดาเมจต่อวินาทีที่อยู่นอก SaveZone
+    [SerializeField] private float illnessDamagePerSecond = 2f;
+
+    // หัก HP ทุกกี่วินาที (ดาเมจต่อครั้ง = damagePerSecond x interval)
+    [SerializeField] private float illnessTickInterval = 1f;
+
+    // true = ถ้ากระดองกำลังป้องกันอยู่ (Space) จะกันดาเมจจากอาการป่วยด้วย
+    [SerializeField] private bool shellBlocksIllness = false;
+
+    // true = เล่นเสียงโดนดาเมจทุกครั้งที่หัก HP จากอาการป่วย
+    [SerializeField] private bool illnessPlaysDamageSound = false;
+
+    // true = จอแดงกะพริบ (Red Vignette) ทุกครั้งที่หัก HP จากอาการป่วย
+    [SerializeField] private bool illnessFlashesScreen = true;
+
+    private float illnessTimer;
+    private Collider2D bodyCollider;
+
+    [Header("Damage Stage Effects (index = stage 0..3)")]
+    [Tooltip("สำรองค่าตัวคูณความเร็วเดินจาก Inspector (PlayerController เวอร์ชันนี้ยังไม่มีระบบเดินให้ปรับ)")]
+    [SerializeField] private float[] stageMoveSpeedMultiplier = { 1f, 1f, 0.8f, 0.8f };
+
+    [Tooltip("ตัวคูณแรงกระโดด ตามระดับความเสียหาย (ความสูงกระโดดลดลงตามกำลังสองของค่านี้)")]
+    [SerializeField] private float[] stageJumpPowerMultiplier = { 1f, 1f, 0.85f, 0.85f };
 
     [Header("Shell HP UI")]
     [SerializeField] private Image shellImage;
@@ -50,11 +85,11 @@ public class HealthNew : MonoBehaviour
     private float breakOneSectionAtPercent = 33f;
     private float breakTwoSectionsAtPercent = 66f;
 
-    private ShellWallBounce shellWallBounce;
+    private ShellDefense shellDefense;
 
     private Rigidbody2D rb;
 
-    private MouseController mouseController;
+    private PlayerController playerController;
 
     [Header("Shell Break Effect")]
 
@@ -73,8 +108,15 @@ public class HealthNew : MonoBehaviour
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
-        shellWallBounce = GetComponent<ShellWallBounce>();
-        mouseController = GetComponent<MouseController>();
+        shellDefense = GetComponent<ShellDefense>();
+        playerController = GetComponent<PlayerController>();
+
+        bodyCollider = GetComponent<Collider2D>();
+
+        if (bodyCollider == null)
+        {
+            bodyCollider = GetComponentInChildren<Collider2D>();
+        }
 
         if (fadeGroup != null)
         {
@@ -88,6 +130,9 @@ public class HealthNew : MonoBehaviour
         safeImpactSpeed = Mathf.Max(0f, safeImpactSpeed);
         damagePerSpeed = Mathf.Max(0f, damagePerSpeed);
         maxCollisionDamage = Mathf.Max(0f, maxCollisionDamage);
+        minCollisionDamage = Mathf.Max(0f, minCollisionDamage);
+        illnessDamagePerSecond = Mathf.Max(0f, illnessDamagePerSecond);
+        illnessTickInterval = Mathf.Max(0.05f, illnessTickInterval);
         minVerticalSpeedForWallDamage = Mathf.Max(0f, minVerticalSpeedForWallDamage);
 
         crackAtDamagePercent = Mathf.Clamp(crackAtDamagePercent, 0f, 100f);
@@ -181,6 +226,12 @@ public class HealthNew : MonoBehaviour
 
         float damage = Mathf.Min(excessSpeed * damagePerSpeed, maxCollisionDamage);
 
+        // กระทบเบา ๆ ไม่ถือว่าเป็นความเสียหาย
+        if (damage < minCollisionDamage)
+        {
+            return;
+        }
+
         TakeDamage(damage);
     }
 
@@ -190,6 +241,45 @@ public class HealthNew : MonoBehaviour
         {
             Die();
         }
+
+        UpdateIllness();
+    }
+
+    // อาการป่วย: อยู่นอก SaveZone จะเสีย HP เป็นรอบ ๆ
+    private void UpdateIllness()
+    {
+        if (!illnessEnabled || isDead)
+        {
+            illnessTimer = 0f;
+            return;
+        }
+
+        Vector2 bodyPoint = bodyCollider != null
+            ? (Vector2)bodyCollider.bounds.center
+            : (Vector2)transform.position;
+
+        // อยู่ใน SaveZone = ปลอดภัย รีเซ็ตตัวนับ
+        if (SaveZone.IsPointInsideAnyZone(bodyPoint))
+        {
+            illnessTimer = 0f;
+            return;
+        }
+
+        illnessTimer += Time.deltaTime;
+
+        if (illnessTimer < illnessTickInterval)
+        {
+            return;
+        }
+
+        illnessTimer -= illnessTickInterval;
+
+        ApplyDamage(
+            illnessDamagePerSecond * illnessTickInterval,
+            shellBlocksIllness,
+            illnessPlaysDamageSound,
+            illnessFlashesScreen
+        );
     }
 
     private Vector2 GetNormalTowardsPlayer(ContactPoint2D contact)
@@ -205,7 +295,17 @@ public class HealthNew : MonoBehaviour
         return normal;
     }
 
+    // ดาเมจจากการชน (กระดองป้องกันได้)
     public void TakeDamage(float damage)
+    {
+        ApplyDamage(damage, true, true, true);
+    }
+
+    private void ApplyDamage(
+        float damage,
+        bool canBeBlockedByShell,
+        bool playSound,
+        bool flashScreen)
     {
         if (isDead || damage <= 0f)
         {
@@ -213,13 +313,24 @@ public class HealthNew : MonoBehaviour
         }
 
         // ตรวจสอบระบบป้องกันดาเมจก่อนหัก HP
-        if (shellWallBounce != null && shellWallBounce.TryBlockDamage())
+        if (canBeBlockedByShell && shellDefense != null && shellDefense.TryBlockDamage())
         {
             return;
         }
 
         currentHP = Mathf.Clamp(currentHP - damage, 0f, maxHP);
-        GameAudio.Instance?.PlayDamage();
+
+        if (playSound)
+        {
+            GameAudio.Instance?.PlayDamage();
+        }
+
+        // Red Vignette: แถบแดง 4 ด้านรอบขอบจอ จางหายใน 0.5 วินาที
+        if (flashScreen)
+        {
+            DamageVignette.Flash();
+        }
+
         UpdateShellUI();
 
         Debug.Log($"HP: {currentHP:F1} / {maxHP:F1}");
@@ -230,8 +341,66 @@ public class HealthNew : MonoBehaviour
         }
     }
 
+    // ระดับความเสียหาย: 0 ปกติ, 1 เริ่มเจ็บ (รอยร้าว), 2 เจ็บมากขึ้น (ช้าลง/กระโดดต่ำ),
+    // 3 เจ็บมาก (ม่านดำ), 4 ตาย  ใช้เกณฑ์เดียวกับรูปกระดองใน UpdateShellUI
+    public int DamageStage => ComputeDamageStage();
+
+    private int ComputeDamageStage()
+    {
+        if (currentHP <= 0f)
+        {
+            return 4;
+        }
+
+        float damagePercent = (maxHP - currentHP) / maxHP * 100f;
+
+        if (damagePercent >= breakTwoSectionsAtPercent)
+        {
+            return 3;
+        }
+
+        if (damagePercent >= breakOneSectionAtPercent)
+        {
+            return 2;
+        }
+
+        if (damagePercent >= crackAtDamagePercent)
+        {
+            return 1;
+        }
+
+        return 0;
+    }
+
+    private static float GetStageValue(float[] values, int stage)
+    {
+        if (values == null || values.Length == 0)
+        {
+            return 1f;
+        }
+
+        return values[Mathf.Clamp(stage, 0, values.Length - 1)];
+    }
+
+    // รอยร้าว/ม่านดำบนจอ + ความเร็วเดิน/แรงกระโดดตามระดับความเสียหาย
+    private void ApplyDamageStageEffects()
+    {
+        int stage = Mathf.Min(ComputeDamageStage(), 3);
+
+        // PlayerController ที่แนบมายังไม่มีระบบ Move Speed
+        // จึงเชื่อมเฉพาะตัวคูณแรงกระโดดตาม Damage Stage
+        if (playerController != null)
+        {
+            playerController.jumpPowerMultiplier =
+                GetStageValue(stageJumpPowerMultiplier, stage);
+        }
+    }
+
     private void UpdateShellUI()
     {
+        // เอฟเฟกต์ตามระดับความเสียหาย ทำงานแม้ไม่ได้ผูก shellImage
+        ApplyDamageStageEffects();
+
         if (shellImage == null)
         {
             return;
@@ -315,9 +484,9 @@ public class HealthNew : MonoBehaviour
             rb.angularVelocity = 0f;
         }
 
-        if (mouseController != null)
+        if (playerController != null)
         {
-            mouseController.movementLocked = true;
+            playerController.movementLocked = true;
         }
 
         StartCoroutine(RespawnAfterDelay());
@@ -381,6 +550,7 @@ public class HealthNew : MonoBehaviour
     {
         currentHP = maxHP;
         isDead = false;
+        illnessTimer = 0f;
 
         if (rb != null)
         {
@@ -388,10 +558,10 @@ public class HealthNew : MonoBehaviour
             rb.angularVelocity = 0f;
         }
 
-        if (mouseController != null)
+        if (playerController != null)
         {
-            mouseController.movementLocked = false;
-            mouseController.ResetAfterRespawn();
+            playerController.movementLocked = false;
+            playerController.ResetAfterRespawn();
         }
 
         UpdateShellUI();
