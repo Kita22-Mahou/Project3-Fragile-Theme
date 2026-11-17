@@ -613,10 +613,7 @@ GameObject:
   - component: {fileID: 6658275054652461227}
   - component: {fileID: 3927955348787867388}
   - component: {fileID: 4775083938478933952}
-  - component: {fileID: 4902575273803324571}
-  - component: {fileID: 1024519940443531472}
   - component: {fileID: 5611050714896671065}
-  - component: {fileID: 5051917362368923939}
   m_Layer: 7
   m_Name: Tumi Test
   m_TagString: Player
@@ -775,50 +772,11 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7431792650135662471}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a062b844e9f41ed41a0577ef2cf699be, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
-  jumpState: 0
-  animator: {fileID: 770448626774034724}
-  isOnGround: 0
-  isAiming: 0
-  isJumped: 0
-  isAirAiming: 0
-  groundCheckPoint: {fileID: 3154542071889599325}
-  groundCheckX: 0.5
-  groundCheckY: 0.3
-  groundLayer:
-    serializedVersion: 2
-    m_Bits: 64
-  minJumpForce: 16
-  maxJumpForce: 50
-  jumpForwardForce: 14
-  maxChargeTime: 0.85
-  jumpChargeTime: 0
-  isJumpedFromGround: 0
-  canAirJump: 1
-  minAimAngle: 15
-  maxAimAngle: 165
-  trajectoryPoint: {fileID: 2125000348887909592}
-  trajectoryDotPrefab: {fileID: 1843257253224819756, guid: 3ef3f55c88efe5641ab91e6d075b3313, type: 3}
-  trajectoryDotCount: 12
-  trajectoryTimeStep: 0.1
-  playerSprite: {fileID: 178772340084094407}
-  facingDirection: 1
---- !u!114 &4902575273803324571
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7431792650135662471}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ee273d3a42f13724c9c515a39e44bdbf, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CoPlayerController
   jumpState: 0
   animator: {fileID: 770448626774034724}
   isOnGround: 0
@@ -839,51 +797,17 @@ MonoBehaviour:
   jumpChargeTime: 0
   isJumpedFromGround: 0
   canAirJump: 1
+  inShellTime: 0.4
   minAimAngle: 15
   maxAimAngle: 165
   trajectoryPoint: {fileID: 2125000348887909592}
   trajectoryDotPrefab: {fileID: 1843257253224819756, guid: 3ef3f55c88efe5641ab91e6d075b3313, type: 3}
   trajectoryDotCount: 12
   trajectoryTimeStep: 0.1
-  playerSprite: {fileID: 390619612025378954}
+  playerSprite: {fileID: 178772340084094407}
   facingDirection: 1
---- !u!114 &1024519940443531472
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7431792650135662471}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bb437c0b9e1ec2244ab504c5478808a3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ShellWallBounce
-  maxShellUses: 999999
-  shellUseIcons:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  protectionDuration: 0.3
-  wallBounceLayers:
-    serializedVersion: 2
-    m_Bits: 256
-  horizontalBounceMultiplier: 1
-  minimumHorizontalBounceSpeed: 1
-  upwardBounceHeight: 2
-  upwardBounceMultiplier: 1
-  wallBounceCooldown: 0.12
-  bounceableLayers:
-    serializedVersion: 2
-    m_Bits: 320
-  verticalBounceMultiplier: 1.1
-  minimumVerticalBounceSpeed: 1
-  maximumBounceSpeed: 40
-  minimumImpactSpeed: 2.35
-  wallNormalThreshold: 0.7
-  verticalNormalThreshold: 0.7
-  controlLockDuration: 0.12
-  maxControlLockDuration: 2
+  movementLocked: 0
+  jumpPowerMultiplier: 1
 --- !u!114 &5611050714896671065
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -896,15 +820,32 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 30701b14e56107d41b3fc36c26155ff0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HealthNew
-  maxHP: 100000
+  maxHP: 100
   currentHP: 100
   ignoreDamageLayers:
     serializedVersion: 2
     m_Bits: 0
-  safeImpactSpeed: 20
-  damagePerSpeed: 2
-  maxCollisionDamage: 0.1
+  safeImpactSpeed: 25
+  damagePerSpeed: 0.4
+  maxCollisionDamage: 100
+  minCollisionDamage: 0
   minVerticalSpeedForWallDamage: 1
+  illnessEnabled: 1
+  illnessDamagePerSecond: 1
+  illnessTickInterval: 1
+  shellBlocksIllness: 0
+  illnessPlaysDamageSound: 0
+  illnessFlashesScreen: 1
+  stageMoveSpeedMultiplier:
+  - 1
+  - 1
+  - 0.8
+  - 0.8
+  stageJumpPowerMultiplier:
+  - 1
+  - 1
+  - 0.85
+  - 0.85
   shellImage: {fileID: 0}
   fullShell: {fileID: 21300000, guid: bd56e8ba071f267418851e75e8210061, type: 3}
   crackedShell: {fileID: 21300000, guid: 73fdfe3bdf34ddf4880920bee25ba2ce, type: 3}
@@ -914,44 +855,12 @@ MonoBehaviour:
   fadeOutDuration: 0.4
   blackHoldDuration: 0.15
   fadeInDuration: 0.4
-  shellBreakShardCount: 100
-  shellBreakShardSpeed: 200
-  shellBreakEffectDuration: 0.6
-  respawnDelay: 0.6
---- !u!114 &5051917362368923939
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7431792650135662471}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1bf905b41411e3343862be568d784942, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CoHealth
-  maxHP: 10000
-  currentHP: 10000
-  ignoreDamageLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  safeImpactSpeed: 20
-  damagePerSpeed: 2
-  maxCollisionDamage: 0.1
-  minVerticalSpeedForWallDamage: 1
   bouncePosX: 0
   bouncePosY: 0
-  bouncePower: 0
-  minimumForce: 0
-  shellImage: {fileID: 0}
-  fullShell: {fileID: 21300000, guid: bd56e8ba071f267418851e75e8210061, type: 3}
-  crackedShell: {fileID: 21300000, guid: 73fdfe3bdf34ddf4880920bee25ba2ce, type: 3}
-  brokenShell2: {fileID: 21300000, guid: 785d20962afbb6445aee70c338af87ae, type: 3}
-  brokenShell1: {fileID: 21300000, guid: 3592b7f919fa0b24b858dcb84d7ef522, type: 3}
-  fadeGroup: {fileID: 0}
-  fadeOutDuration: 0.4
-  blackHoldDuration: 0.15
-  fadeInDuration: 0.4
+  bounceFloorPower: 30
+  bounceWallPower: 10
+  minimumForce: 30
+  canBounce: 0
   shellBreakShardCount: 100
   shellBreakShardSpeed: 200
   shellBreakEffectDuration: 0.6

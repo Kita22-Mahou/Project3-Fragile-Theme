@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
-using static UnityEngine.UI.Image;
+using System.Collections;
+using UnityEngine.InputSystem;
 
 public class PlayerController : MonoBehaviour
 {
@@ -8,7 +9,7 @@ public class PlayerController : MonoBehaviour
         OnGround,
         Aiming,
         InAir,
-        AirAiming
+        InShell
     }
 
     [SerializeField] private JumpState jumpState = JumpState.OnGround;
@@ -20,6 +21,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private bool isAiming;
     [SerializeField] private bool isJumped;
     [SerializeField] private bool isAirAiming;
+    [SerializeField] public bool isInShell;
 
     [Header("Ground Check")]
     [SerializeField] private Transform groundCheckPoint;
@@ -38,10 +40,13 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private bool isJumpedFromGround = false;
 
     [Header("Air Jump Setting")]
-    [SerializeField] private bool canAirJump = false;
+    [SerializeField] public bool canAirJump = false;
 
     private float AirAimingMaxChargeTime;
     private float NormalMaxChargeTime;
+
+    [Header("In Shell Setting")]
+    [SerializeField] private float inShellTime = 1;
 
     [Header("Mouse Aim Setting")]
     [SerializeField] private float minAimAngle = 15f;
@@ -73,7 +78,7 @@ public class PlayerController : MonoBehaviour
 
         mainCamera = Camera.main;
 
-        AirAimingMaxChargeTime = maxChargeTime / 2f;
+        AirAimingMaxChargeTime = maxChargeTime / 3f;
         NormalMaxChargeTime = maxChargeTime;
 
         Grounded();
@@ -111,9 +116,14 @@ public class PlayerController : MonoBehaviour
         {
             //Debug.Log("Click");
 
-            // เล็งจากพื้น
-            if (!isJumpedFromGround && isOnGround)
+            if (!isJumpedFromGround && isOnGround && !isInShell)
             {
+
+                if (isInShell)
+                    return;
+
+                //Debug.Log("Aiming");
+
                 if (!isOnGround || isJumped)
                     return;
 
@@ -124,7 +134,7 @@ public class PlayerController : MonoBehaviour
             // เล็งกลางอากาศ
             if (isJumpedFromGround && canAirJump && isJumped)
             {
-                Debug.Log("Air Aiming");
+                //Debug.Log("Air Aiming");
                 isAirAiming = true;
             }
         }
@@ -164,13 +174,20 @@ public class PlayerController : MonoBehaviour
         // เมื่อ Air Aiming จะทำให้เวลาช้าลง
         if (isAirAiming)
         {
-            Time.timeScale = 0.5f;
+            Time.timeScale = 0.33f;
             maxChargeTime = AirAimingMaxChargeTime;
         }
         else
         {
             Time.timeScale = 1f;
             maxChargeTime = NormalMaxChargeTime;
+        }
+
+        // กด SpaceBar เพื่อเข้า Shell
+        if (Keyboard.current.spaceKey.wasPressedThisFrame)
+        {
+            Debug.Log("In Shell!!");
+            StartCoroutine(ShellState());
         }
 
         Grounded();
@@ -188,26 +205,57 @@ public class PlayerController : MonoBehaviour
 
     public void Grounded()
     {
-        bool groundDetected =
-        Physics2D.Raycast(groundCheckPoint.position, Vector2.down, groundCheckY, groundLayer)
-        || Physics2D.Raycast(groundCheckPoint.position + new Vector3(groundCheckX, 0, 0), Vector2.down, groundCheckY, groundLayer)
-        || Physics2D.Raycast(groundCheckPoint.position - new Vector3(groundCheckX, 0, 0), Vector2.down, groundCheckY, groundLayer);
-
-        // ถ้ากระโดดไปแล้ว และ อยู่ในอากาศ = false
-        if (isJumped && jumpState == JumpState.InAir)
+        if (groundCheckPoint == null || rb == null)
         {
             isOnGround = false;
+            return;
         }
 
-        // ถ้าตรวจเจอพื้น และ ความเร็วน้อยมากๆ = true
-        if (groundDetected && rb.linearVelocityY <= 0.01f)
+        bool groundDetected = false;
+
+        for (int i = -1; i <= 1; i++)
         {
-            isOnGround = true;
-            isJumped = false;
+            Vector2 origin = (Vector2)groundCheckPoint.position
+                + Vector2.right * (i * groundCheckX)
+                + Vector2.up * 0.05f;
 
-            isJumpedFromGround = false;
-            canAirJump = false;
+            foreach (RaycastHit2D hit in Physics2D.RaycastAll(
+                origin, Vector2.down, groundCheckY, groundLayer))
+            {
+                if (hit.collider == null ||
+                    hit.collider.attachedRigidbody == rb ||
+                    hit.normal.y < 0.55f)
+                    continue;
+
+                groundDetected = true;
+                break;
+            }
+
+            if (groundDetected) break;
         }
+
+        if (!groundDetected || rb.linearVelocityY > 0.01f)
+        {
+            isOnGround = false;
+            return;
+        }
+
+        isOnGround = true;
+        isJumped = false;
+        isJumpedFromGround = false;
+        canAirJump = false;
+
+        if (isAirAiming)
+        {
+            isAirAiming = false;
+            jumpChargeTime = 0f;
+            Time.timeScale = 1f;
+            maxChargeTime = NormalMaxChargeTime;
+            HideJumpTrajectory();
+        }
+
+        if (!isAiming)
+            jumpState = JumpState.OnGround;
     }
 
     // 1 เล็งแล้ว update ตำแหน่งของ mouse
@@ -236,6 +284,7 @@ public class PlayerController : MonoBehaviour
     }
     */
 
+    #region Aim Mechanic
     //เอาตำแหน่ง mouse
     private Vector2 GetMouseWorldPosition()
     {
@@ -289,26 +338,7 @@ public class PlayerController : MonoBehaviour
             Mathf.Sin(radians)
         ).normalized;
     }
-
-    //เปลี่ยนให้ player หันไปตาม mouse
-    private void UpdateFacingDirection()
-    {
-        Vector2 mousePos = GetMouseWorldPosition();
-        if (mousePos.x > 0f)
-        {
-            facingDirection = 1f;
-
-            if (playerSprite != null)
-                playerSprite.flipX = false;
-        }
-        else if (mousePos.x < 0f)
-        {
-            facingDirection = -1f;
-
-            if (playerSprite != null)
-                playerSprite.flipX = true;
-        }
-    }
+    #endregion
 
     #region Jump Mechanic
     // 2 คำนวณ ทิศทาง แรง แล้วกระโดด
@@ -458,6 +488,37 @@ public class PlayerController : MonoBehaviour
     }
     #endregion 
 
+    private IEnumerator ShellState()
+    {
+        jumpState = JumpState.InShell;
+        isInShell = true;
+
+        yield return new WaitForSeconds(inShellTime);
+
+        jumpState = JumpState.InAir;
+        isInShell = false;
+    }
+
+    //เปลี่ยนให้ player หันไปตาม mouse
+    private void UpdateFacingDirection()
+    {
+        Vector2 mousePos = GetMouseWorldPosition();
+        if (mousePos.x > 0f)
+        {
+            facingDirection = 1f;
+
+            if (playerSprite != null)
+                playerSprite.flipX = false;
+        }
+        else if (mousePos.x < 0f)
+        {
+            facingDirection = -1f;
+
+            if (playerSprite != null)
+                playerSprite.flipX = true;
+        }
+    }
+
     private void OnDrawGizmos()
     {
         if (groundCheckPoint == null) return;
@@ -495,7 +556,6 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-
     // เรียกจาก HealthNew หลังเกิดใหม่
     public void ResetAfterRespawn()
     {
@@ -526,5 +586,4 @@ public class PlayerController : MonoBehaviour
 
         HideJumpTrajectory();
     }
-
 }

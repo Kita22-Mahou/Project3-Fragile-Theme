@@ -1,6 +1,8 @@
+using System.Collections;
+using System.Collections.Generic;
+using System.Drawing;
 using UnityEngine;
 using UnityEngine.UI;
-using System.Collections;
 
 public class HealthNew : MonoBehaviour
 {
@@ -79,6 +81,16 @@ public class HealthNew : MonoBehaviour
     [SerializeField] private float blackHoldDuration = 0.15f;
     [SerializeField] private float fadeInDuration = 0.4f;
 
+    [Header("Wall Bounce")]
+    [SerializeField] private int bouncePosX;
+    [SerializeField] private int bouncePosY;
+    [SerializeField] private float bounceFloorPower;
+    [SerializeField] private float bounceWallPower;
+
+    [SerializeField] private int minimumForce;
+    [SerializeField] private bool canBounce;
+
+
     private float crackAtDamagePercent = 10f;
     private float breakOneSectionAtPercent = 33f;
     private float breakTwoSectionsAtPercent = 66f;
@@ -137,7 +149,7 @@ public class HealthNew : MonoBehaviour
         breakOneSectionAtPercent = Mathf.Clamp(breakOneSectionAtPercent, crackAtDamagePercent, 100f);
         breakTwoSectionsAtPercent = Mathf.Clamp(breakTwoSectionsAtPercent, breakOneSectionAtPercent, 100f);
 
-        UpdateShellUI();
+        //UpdateShellUI();
 
         if (currentHP <= 0f)
         {
@@ -162,24 +174,35 @@ public class HealthNew : MonoBehaviour
 
         bool hitFloor = false;
         bool hitCeiling = false;
-        bool hitWall = false;
+        bool hitLeftWall = false;
+        bool hitRightWall = false;
 
         // ตรวจทิศทางการชน
         foreach (ContactPoint2D contact in collision.contacts)
         {
+
+            contacts.Add(contact);
             Vector2 normal = GetNormalTowardsPlayer(contact);
 
             if (normal.y > 0.5f)
             {
+                //Debug.Log("Hit Floor");
                 hitFloor = true;
             }
             else if (normal.y < -0.5f)
             {
+                //Debug.Log("Hit Ceiling");
                 hitCeiling = true;
             }
-            else if (Mathf.Abs(normal.x) > 0.5f)
+            else if (normal.x > 0.5f)
             {
-                hitWall = true;
+                //Debug.Log("Hit Wall Left");
+                hitLeftWall = true;
+            }
+            else if (normal.x < -0.5f)
+            {
+                //Debug.Log("Hit Wall Right");
+                hitRightWall = true;
             }
         }
 
@@ -187,6 +210,48 @@ public class HealthNew : MonoBehaviour
 
         float impactSpeed;
 
+        //Debug.Log($"{impactVelocity}");
+        if (hitFloor && impactVelocity.y >= minimumForce) // Floor Bounce
+        {
+            //Debug.Log("Bounce Up");
+            canBounce = true;
+            bouncePosX = 0;
+            bouncePosY = 1;
+        }
+        //else if (hitCeiling && impactVelocity.y <= -minimumForce) // Ceiling Bounce
+        //{
+        //    Debug.Log("Bounce Down");
+        //    canBounce = true;
+        //    bouncePosX = 0;
+        //    bouncePosY = -1;
+        //}
+        else if (hitLeftWall && impactVelocity.x >= minimumForce) // WallLeft Bounce
+        {
+            //Debug.Log("Bounce Right");
+            canBounce = true;
+            bouncePosX = 1;
+            bouncePosY = 0;
+        }
+        else if (hitRightWall && impactVelocity.x <= -minimumForce) // WallRight Bounce
+        {
+            //Debug.Log("Bounce Left");
+            canBounce = true;
+            bouncePosX = -1;
+            bouncePosY = 0;
+        }
+        else
+        {
+            //Debug.Log("No Bounce");
+            canBounce = false;
+            bouncePosX = 0;
+            bouncePosY = 0;
+        }
+
+        if (playerController.isInShell)
+        {
+            playerController.canAirJump = true;
+            ShellBounce();
+        }
 
         // ชนพื้น
         if (hitFloor)
@@ -199,7 +264,16 @@ public class HealthNew : MonoBehaviour
             impactSpeed = Mathf.Abs(impactVelocity.y);
         }
         // ชนกำแพง
-        else if (hitWall)
+        else if (hitLeftWall)
+        {
+            if (Mathf.Abs(impactVelocity.y) < minVerticalSpeedForWallDamage)
+            {
+                return;
+            }
+
+            impactSpeed = Mathf.Abs(impactVelocity.x);
+        }
+        else if (hitRightWall)
         {
             if (Mathf.Abs(impactVelocity.y) < minVerticalSpeedForWallDamage)
             {
@@ -231,6 +305,12 @@ public class HealthNew : MonoBehaviour
         }
 
         TakeDamage(damage);
+    }
+
+    private void ShellBounce()
+    {
+        Vector2 bounceForce = new Vector2(bouncePosX * bounceWallPower, bouncePosY * bounceFloorPower);
+        rb.linearVelocity = bounceForce;
     }
 
     private void Update()
@@ -329,7 +409,7 @@ public class HealthNew : MonoBehaviour
             DamageVignette.Flash();
         }
 
-        UpdateShellUI();
+        //UpdateShellUI();
 
         Debug.Log($"HP: {currentHP:F1} / {maxHP:F1}");
 
@@ -339,10 +419,10 @@ public class HealthNew : MonoBehaviour
         }
     }
 
+    /*
     // ระดับความเสียหาย: 0 ปกติ, 1 เริ่มเจ็บ (รอยร้าว), 2 เจ็บมากขึ้น (ช้าลง/กระโดดต่ำ),
     // 3 เจ็บมาก (ม่านดำ), 4 ตาย  ใช้เกณฑ์เดียวกับรูปกระดองใน UpdateShellUI
     public int DamageStage => ComputeDamageStage();
-
     private int ComputeDamageStage()
     {
         if (currentHP <= 0f)
@@ -369,7 +449,6 @@ public class HealthNew : MonoBehaviour
 
         return 0;
     }
-
     private static float GetStageValue(float[] values, int stage)
     {
         if (values == null || values.Length == 0)
@@ -390,7 +469,7 @@ public class HealthNew : MonoBehaviour
                 GetStageValue(stageJumpPowerMultiplier, stage);
         }
     }
-
+    
     private void UpdateShellUI()
     {
         // เอฟเฟกต์ตามระดับความเสียหาย ทำงานแม้ไม่ได้ผูก shellImage
@@ -448,6 +527,7 @@ public class HealthNew : MonoBehaviour
         shellImage.sprite = targetSprite;
         shellImage.enabled = targetSprite != null;
     }
+    */
 
     public void Heal(float amount)
     {
@@ -458,7 +538,7 @@ public class HealthNew : MonoBehaviour
 
         currentHP = Mathf.Clamp(currentHP + amount,0f,maxHP);
 
-        UpdateShellUI();
+        //UpdateShellUI();
     }
 
     public void Die()
@@ -471,7 +551,7 @@ public class HealthNew : MonoBehaviour
         isDead = true;
         currentHP = 0f;
         GameAudio.Instance?.PlayDeath();
-        UpdateShellUI();
+        //UpdateShellUI();
 
         if (rb != null)
         {
@@ -559,7 +639,7 @@ public class HealthNew : MonoBehaviour
             playerController.ResetAfterRespawn();
         }
 
-        UpdateShellUI();
+        //UpdateShellUI();
     }
 
 
@@ -581,9 +661,9 @@ public class HealthNew : MonoBehaviour
 
         Sprite shardSprite = GetShellShardSprite();
 
-        Color shardColor = stage >= 3
-            ? new Color(0.75f, 0.32f, 0.24f, 1f)
-            : new Color(0.45f, 0.72f, 0.38f, 1f);
+        UnityEngine.Color shardColor = stage >= 3
+            ? new UnityEngine.Color(0.75f, 0.32f, 0.24f, 1f)
+            : new UnityEngine.Color(0.45f, 0.72f, 0.38f, 1f);
 
         for (int i = 0; i < shellBreakShardCount; i++)
         {
@@ -622,7 +702,7 @@ public class HealthNew : MonoBehaviour
 
             // สลับเศษสีทองกับสีของกระดอง
             shardImage.color = Random.value > 0.5f
-                ? new Color(0.82f, 0.66f, 0.38f, 1f)
+                ? new UnityEngine.Color(0.82f, 0.66f, 0.38f, 1f)
                 : shardColor;
 
             Vector2 direction = Random.insideUnitCircle.normalized;
@@ -664,7 +744,7 @@ public class HealthNew : MonoBehaviour
         );
 
         texture.name = "ShellShardTexture";
-        texture.SetPixel(0, 0, Color.white);
+        texture.SetPixel(0, 0, UnityEngine.Color.white);
         texture.Apply();
 
         shellShardSprite = Sprite.Create(
@@ -690,7 +770,7 @@ public class HealthNew : MonoBehaviour
 
         float duration = Mathf.Max(0.05f, shellBreakEffectDuration);
 
-        Color startColor = shardImage.color;
+        UnityEngine.Color startColor = shardImage.color;
 
         while (elapsed < duration && shardRect != null && shardImage != null)
         {
@@ -707,7 +787,7 @@ public class HealthNew : MonoBehaviour
 
             shardRect.Rotate(0f, 0f, rotationSpeed * deltaTime);
 
-            Color color = startColor;
+            UnityEngine.Color color = startColor;
             color.a = 1f - progress;
 
             shardImage.color = color;
@@ -718,6 +798,26 @@ public class HealthNew : MonoBehaviour
         if (shardRect != null)
         {
             Destroy(shardRect.gameObject);
+        }
+    }
+
+    private List<ContactPoint2D> contacts = new List<ContactPoint2D>();
+    private void OnDrawGizmos()
+    {
+        foreach (ContactPoint2D contact in contacts)
+        {
+            Vector2 normal = GetNormalTowardsPlayer(contact);
+
+            // จุดสัมผัส
+            Gizmos.color = UnityEngine.Color.red;
+            Gizmos.DrawSphere(contact.point, 0.08f);
+
+            // ทิศทาง Normal
+            //Gizmos.color = UnityEngine.Color.green;
+            //Gizmos.DrawLine(
+            //    contact.point,
+            //    contact.point + normal * 0.5f
+            //);
         }
     }
 }

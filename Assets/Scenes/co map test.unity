@@ -489730,10 +489730,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 1024519940443531472, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
-      propertyPath: m_Enabled
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 1994750403940972139, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
       propertyPath: m_LocalPosition.x
       value: 47.1
@@ -489782,70 +489778,10 @@ PrefabInstance:
       propertyPath: m_AnchorMax.y
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 4902575273803324571, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
-      propertyPath: inShellTime
-      value: 0.4
-      objectReference: {fileID: 0}
-    - target: {fileID: 4902575273803324571, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
-      propertyPath: maxJumpForce
-      value: 50
-      objectReference: {fileID: 0}
-    - target: {fileID: 5051917362368923939, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
-      propertyPath: maxHP
-      value: 100
-      objectReference: {fileID: 0}
-    - target: {fileID: 5051917362368923939, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
-      propertyPath: currentHP
-      value: 100
-      objectReference: {fileID: 0}
-    - target: {fileID: 5051917362368923939, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
-      propertyPath: shellImage
-      value: 
-      objectReference: {fileID: 1075549474}
-    - target: {fileID: 5051917362368923939, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
-      propertyPath: bouncePower
-      value: 10
-      objectReference: {fileID: 0}
-    - target: {fileID: 5051917362368923939, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
-      propertyPath: minimumForce
-      value: 30
-      objectReference: {fileID: 0}
-    - target: {fileID: 5051917362368923939, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
-      propertyPath: damagePerSpeed
-      value: 0.4
-      objectReference: {fileID: 0}
-    - target: {fileID: 5051917362368923939, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
-      propertyPath: bounceWallPower
-      value: 10
-      objectReference: {fileID: 0}
-    - target: {fileID: 5051917362368923939, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
-      propertyPath: safeImpactSpeed
-      value: 25
-      objectReference: {fileID: 0}
-    - target: {fileID: 5051917362368923939, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
-      propertyPath: bounceFloorPower
-      value: 30
-      objectReference: {fileID: 0}
-    - target: {fileID: 5051917362368923939, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
-      propertyPath: maxCollisionDamage
-      value: 100
-      objectReference: {fileID: 0}
-    - target: {fileID: 5611050714896671065, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
-      propertyPath: m_Enabled
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 5611050714896671065, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
       propertyPath: shellImage
       value: 
       objectReference: {fileID: 1075549474}
-    - target: {fileID: 5611050714896671065, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
-      propertyPath: damagePerSpeed
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 5611050714896671065, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
-      propertyPath: maxCollisionDamage
-      value: 0.1
-      objectReference: {fileID: 0}
     - target: {fileID: 7431792650135662471, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
       propertyPath: m_Name
       value: Tumi Test

@@ -1,7 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
 using UnityEngine.InputSystem;
-using static UnityEngine.UI.Image;
 
 public class CoPlayerController : MonoBehaviour
 {
@@ -42,6 +41,7 @@ public class CoPlayerController : MonoBehaviour
 
     [Header("Air Jump Setting")]
     [SerializeField] public bool canAirJump = true;
+
     private float AirAimingMaxChargeTime;
     private float NormalMaxChargeTime;
 
