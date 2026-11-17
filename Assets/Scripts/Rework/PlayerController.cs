@@ -11,7 +11,7 @@ public class PlayerController : MonoBehaviour
         AirAiming
     }
 
-    private JumpState jumpState = JumpState.OnGround;
+    [SerializeField] private JumpState jumpState = JumpState.OnGround;
 
     [SerializeField] private Animator animator;
 
@@ -19,6 +19,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private bool isOnGround;
     [SerializeField] private bool isAiming;
     [SerializeField] private bool isJumped;
+    [SerializeField] private bool isAirAiming;
 
     [Header("Ground Check")]
     [SerializeField] private Transform groundCheckPoint;
@@ -29,12 +30,18 @@ public class PlayerController : MonoBehaviour
     [Header("Jump Setting")]
     [SerializeField] private float minJumpForce = 10f;
     [SerializeField] private float maxJumpForce = 26f;
-    [SerializeField] private float maxChargeTime = 0.7f;
     [SerializeField] private float jumpForwardForce = 14f;
+    [SerializeField] private float maxChargeTime = 0.7f;
+    [SerializeField] private float jumpChargeTime;
+    private Vector2 launchVelocity;
+
+    [SerializeField] private bool isJumpedFromGround = false;
+
+    [Header("Air Jump Setting")]
+    [SerializeField] private bool canAirJump = true;
 
     private float AirAimingMaxChargeTime;
     private float NormalMaxChargeTime;
-    private float jumpChargeTime;
 
     [Header("Mouse Aim Setting")]
     [SerializeField] private float minAimAngle = 15f;
@@ -59,7 +66,14 @@ public class PlayerController : MonoBehaviour
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
+
         mainCamera = Camera.main;
+
+        AirAimingMaxChargeTime = maxChargeTime / 2f;
+        NormalMaxChargeTime = maxChargeTime;
+
+        Grounded();
+        CreateTrajectoryDots();
     }
 
     void Start()
@@ -70,43 +84,113 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
-        // เริ่มเล็ง
-        if (Input.GetMouseButtonDown(0) && isOnGround && jumpState == JumpState.OnGround)
+        // การกด mouse
+        if (Input.GetMouseButtonDown(0))          // กดเพื่อ Aim
+        {
+            //Debug.Log("Click");
+
+            // เล็งจากพื้น
+            if (!isJumpedFromGround && isOnGround)
+            {
+                if (!isOnGround || isJumped)
+                    return;
+
+                jumpState = JumpState.Aiming;
+                isAiming = true;
+            }
+
+            // เล็งกลางอากาศ
+            if (isJumpedFromGround && canAirJump && isJumped)
+            {
+                Debug.Log("Air Aiming");
+                isAirAiming = true;
+            }
+        }
+        if (Input.GetMouseButtonUp(0) && (isAiming || isAirAiming))           // ปล่อยเพื่อ Jump
+        {
+            //Debug.Log("UnClick");
+
+            // กระโดดจากพื้น
+            if (!isJumpedFromGround && isAiming)
+            {
+                if (!isOnGround)
+                    return;
+
+                if (!isJumpedFromGround)
+                    isJumpedFromGround = true;
+
+                isAiming = false;
+                Jump();
+            }
+
+            // กระโดดกลางอากาศ
+            if (isJumpedFromGround && canAirJump && isAirAiming)
+            {
+                isAirAiming = false;
+                Jump();
+
+                canAirJump = false;
+            }
+        }
+
+        //เล็งเมื่อกำลังกด mouse และครบเงื่อนไข
+        if (isAiming || isAirAiming)
         {
             Aiming();
         }
-        if (Input.GetMouseButtonUp(0) && isOnGround && jumpState == JumpState.OnGround)
-        {
-            Jump();
-        }
-        Grounded();
-    }
 
-    public bool Grounded()
-    {
-        if (jumpState == JumpState.InAir)
-            return isOnGround = false;
-
-        if (Physics2D.Raycast(groundCheckPoint.position, Vector2.down, groundCheckY, groundLayer)
-            || Physics2D.Raycast(groundCheckPoint.position + new Vector3(groundCheckX, 0, 0), Vector2.down, groundCheckY, groundLayer)
-            || Physics2D.Raycast(groundCheckPoint.position + new Vector3(groundCheckX, 0, 0), Vector2.down, groundCheckY, groundLayer))
+        // เมื่อ Air Aiming จะทำให้เวลาช้าลง
+        if (isAirAiming)
         {
-            return isOnGround = true;
+            Time.timeScale = 0.5f;
+            maxChargeTime = AirAimingMaxChargeTime;
         }
         else
         {
-            return isOnGround = false;
+            Time.timeScale = 1f;
+            maxChargeTime = NormalMaxChargeTime;
+        }
+
+        Grounded();
+
+        //ตัวเปลี่ยนให้เป็น OnGround state
+        if (isOnGround && !isAiming)
+        {
+            jumpState = JumpState.OnGround;
+        }
+
+        ChangeAnimation();
+        UpdateJumpTrajectory();
+        //UpdateFacingDirection();
+    }
+
+    public void Grounded()
+    {
+        bool groundDetected =
+        Physics2D.Raycast(groundCheckPoint.position, Vector2.down, groundCheckY, groundLayer)
+        || Physics2D.Raycast(groundCheckPoint.position + new Vector3(groundCheckX, 0, 0), Vector2.down, groundCheckY, groundLayer)
+        || Physics2D.Raycast(groundCheckPoint.position - new Vector3(groundCheckX, 0, 0), Vector2.down, groundCheckY, groundLayer);
+
+        // ถ้ากระโดดไปแล้ว และ อยู่ในอากาศ = false
+        if (isJumped && jumpState == JumpState.InAir)
+        {
+            isOnGround = false;
+        }
+
+        // ถ้าตรวจเจอพื้น และ ความเร็วน้อยมากๆ = true
+        if (groundDetected && rb.linearVelocityY <= 0.01f)
+        {
+            isOnGround = true;
+            isJumped = false;
+
+            isJumpedFromGround = false;
         }
     }
 
     // 1 เล็งแล้ว update ตำแหน่งของ mouse
     public void Aiming()
     {
-        if (!isOnGround || isJumped)
-            return;
-
-        isAiming = true;
-
+        //Debug.Log("Charging!!");
         jumpChargeTime += Time.deltaTime;
         jumpChargeTime = Mathf.Clamp(
                     jumpChargeTime,
@@ -117,7 +201,7 @@ public class PlayerController : MonoBehaviour
         UpdateAimFromMouse();
     }
 
-
+    /*
     private Vector2 GetDefaultAimDirection()
     {
         Vector2 direction = new Vector2(
@@ -127,7 +211,9 @@ public class PlayerController : MonoBehaviour
 
         return direction.normalized;
     }
+    */
 
+    //เอาตำแหน่ง mouse
     private Vector2 GetMouseWorldPosition()
     {
         if (mainCamera == null)
@@ -145,6 +231,8 @@ public class PlayerController : MonoBehaviour
         );
     }
 
+
+    //update ตำแหน่ง mouse
     private void UpdateAimFromMouse()
     {
         Vector2 direction = GetMouseWorldPosition() - rb.position;
@@ -179,6 +267,7 @@ public class PlayerController : MonoBehaviour
         ).normalized;
     }
 
+    //เปลี่ยนให้ player หันไปตาม mouse
     private void UpdateFacingDirection()
     {
         Vector2 mousePos = GetMouseWorldPosition();
@@ -197,6 +286,134 @@ public class PlayerController : MonoBehaviour
                 playerSprite.flipX = true;
         }
     }
+
+    #region Jump Mechanic
+    // 2 คำนวณ ทิศทาง แรง แล้วกระโดด
+    private void Jump()
+    {
+        Debug.Log("in JUMP");
+
+        float jumpPower = GetJumpPower();
+        launchVelocity = aimDirection * jumpPower;
+
+        jumpState = JumpState.InAir;
+        rb.linearVelocity = launchVelocity;
+        isJumped = true;
+        jumpChargeTime = 0f;
+    }
+
+    private float GetJumpPower()
+    {
+        float jumpForce = Mathf.Lerp(
+            minJumpForce,
+            maxJumpForce,
+            GetChargePercent()
+        );
+
+        return new Vector2(
+            jumpForwardForce,
+            jumpForce
+        ).magnitude * 1;//SlowJumpSpeedMultiplier;
+    }
+
+    private float GetChargePercent()
+    {
+        return maxChargeTime > 0f
+            ? Mathf.Clamp01(jumpChargeTime / maxChargeTime)
+            : 1f;
+    }
+    #endregion
+
+
+    #region Jump Trajectory
+    private void CreateTrajectoryDots()
+    {
+        if (trajectoryDotPrefab == null)
+            return;
+
+        trajectoryDots = new Transform[trajectoryDotCount];
+
+        for (int i = 0; i < trajectoryDots.Length; i++)
+        {
+            GameObject dot = Instantiate(trajectoryDotPrefab);
+
+            trajectoryDots[i] = dot.transform;
+            dot.SetActive(false);
+        }
+    }
+
+    private void UpdateJumpTrajectory()
+    {
+        if (trajectoryDots == null)
+            return;
+
+        if (!isAiming && !isAirAiming)
+        {
+            HideJumpTrajectory();
+            return;
+        }
+
+        float launchSpeed = GetJumpPower();
+
+        Vector2 startPosition = trajectoryPoint != null
+            ? trajectoryPoint.transform.position
+            : rb.position;
+
+        Vector2 initialVelocity = aimDirection * launchSpeed;
+
+        float gravityY =
+            Physics2D.gravity.y * rb.gravityScale;
+
+        Vector2 previousPoint = startPosition;
+
+        for (int i = 0; i < trajectoryDots.Length; i++)
+        {
+            float time = (i + 1) * trajectoryTimeStep;
+
+            Vector2 point = startPosition
+                + initialVelocity * time
+                + Vector2.up * (0.5f * gravityY * time * time);
+
+            trajectoryDots[i].gameObject.SetActive(true);
+            trajectoryDots[i].position = point;
+
+            Vector2 segment = point - previousPoint;
+
+            RaycastHit2D hit = Physics2D.Raycast(
+                previousPoint,
+                segment.normalized,
+                segment.magnitude,
+                groundLayer
+            );
+
+            if (hit.collider != null)
+            {
+                trajectoryDots[i].position = hit.point;
+
+                for (int j = i + 1; j < trajectoryDots.Length; j++)
+                {
+                    trajectoryDots[j].gameObject.SetActive(false);
+                }
+
+                break;
+            }
+
+            previousPoint = point;
+        }
+    }
+
+    private void HideJumpTrajectory()
+    {
+        if (trajectoryDots == null)
+            return;
+
+        foreach (Transform dot in trajectoryDots)
+        {
+            if (dot != null)
+                dot.gameObject.SetActive(false);
+        }
+    }
+    #endregion 
 
     private void OnDrawGizmos()
     {
@@ -217,5 +434,21 @@ public class PlayerController : MonoBehaviour
         // Right Ray
         Gizmos.color = Color.blue;
         Gizmos.DrawRay(origin3, Vector3.down * groundCheckY);
+    }
+
+    void ChangeAnimation()
+    {
+        if (jumpState == JumpState.OnGround)
+        {
+            animator.Play("Player idle");
+        }
+        else if (jumpState == JumpState.Aiming)
+        {
+            animator.Play("PlayerAiming");
+        }
+        else if (jumpState == JumpState.InAir)
+        {
+            animator.Play("PlayerInAir");
+        }
     }
 }
