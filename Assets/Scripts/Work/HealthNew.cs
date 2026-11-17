@@ -38,14 +38,12 @@ public class HealthNew : MonoBehaviour
 
     [SerializeField] private float minVerticalSpeedForWallDamage = 1f;
 
-    [Header("Illness (Outside Save Zone)")]
-    [Tooltip("Tumi ป่วย: อยู่นอก SaveZone จะเสีย HP ต่อเนื่อง")]
     [SerializeField] private bool illnessEnabled = true;
 
     // ดาเมจต่อวินาทีที่อยู่นอก SaveZone
-    [SerializeField] private float illnessDamagePerSecond = 2f;
+    [SerializeField] private float illnessDamagePerSecond = 1f;
 
-    // หัก HP ทุกกี่วินาที (ดาเมจต่อครั้ง = damagePerSecond x interval)
+    // หัก HP ทุกกี่วินาที
     [SerializeField] private float illnessTickInterval = 1f;
 
     // true = ถ้ากระดองกำลังป้องกันอยู่ (Space) จะกันดาเมจจากอาการป่วยด้วย
@@ -386,9 +384,6 @@ public class HealthNew : MonoBehaviour
     private void ApplyDamageStageEffects()
     {
         int stage = Mathf.Min(ComputeDamageStage(), 3);
-
-        // PlayerController ที่แนบมายังไม่มีระบบ Move Speed
-        // จึงเชื่อมเฉพาะตัวคูณแรงกระโดดตาม Damage Stage
         if (playerController != null)
         {
             playerController.jumpPowerMultiplier =
@@ -461,7 +456,7 @@ public class HealthNew : MonoBehaviour
             return;
         }
 
-        currentHP = Mathf.Clamp(currentHP + amount, 0f, maxHP);
+        currentHP = Mathf.Clamp(currentHP + amount,0f,maxHP);
 
         UpdateShellUI();
     }

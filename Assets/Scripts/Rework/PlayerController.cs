@@ -38,7 +38,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private bool isJumpedFromGround = false;
 
     [Header("Air Jump Setting")]
-    [SerializeField] private bool canAirJump = true;
+    [SerializeField] private bool canAirJump = false;
 
     private float AirAimingMaxChargeTime;
     private float NormalMaxChargeTime;
@@ -206,6 +206,7 @@ public class PlayerController : MonoBehaviour
             isJumped = false;
 
             isJumpedFromGround = false;
+            canAirJump = false;
         }
     }
 
@@ -313,8 +314,6 @@ public class PlayerController : MonoBehaviour
     // 2 คำนวณ ทิศทาง แรง แล้วกระโดด
     private void Jump()
     {
-        Debug.Log("in JUMP");
-
         float jumpPower = GetJumpPower();
         launchVelocity = aimDirection * jumpPower;
 
@@ -424,6 +423,26 @@ public class PlayerController : MonoBehaviour
 
             previousPoint = point;
         }
+    }
+
+    public bool RestoreAirJump()
+    {
+        if (movementLocked || canAirJump)
+        {
+            return false;
+        }
+
+        // ต้องอยู่กลางอากาศหลังจากกระโดดจากพื้นแล้ว
+        if (!isJumped || !isJumpedFromGround || isOnGround)
+        {
+            return false;
+        }
+
+        canAirJump = true;
+
+        Debug.Log("Air Jump Restored!");
+
+        return true;
     }
 
     private void HideJumpTrajectory()
