@@ -639,7 +639,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &59388108
 Transform:
   m_ObjectHideFlags: 0
@@ -288990,7 +288990,7 @@ Tilemap:
     m_Data: {r: 1, g: 1, b: 1, a: 1}
   m_TileObjectToInstantiateArray: []
   m_AnimationFrameRate: 1
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 0}
   m_Origin: {x: -71, y: -5, z: 0}
   m_Size: {x: 302, y: 231, z: 1}
   m_TileAnchor: {x: 0.5, y: 0.5, z: 0}
@@ -298618,7 +298618,7 @@ Tilemap:
     m_Data: {r: 1, g: 1, b: 1, a: 1}
   m_TileObjectToInstantiateArray: []
   m_AnimationFrameRate: 1
-  m_Color: {r: 0.8207547, g: 0.096787095, b: 0.096787095, a: 1}
+  m_Color: {r: 0.8207547, g: 0.096787095, b: 0.096787095, a: 0}
   m_Origin: {x: -46, y: 0, z: 0}
   m_Size: {x: 253, y: 209, z: 1}
   m_TileAnchor: {x: 0.5, y: 0.5, z: 0}
@@ -321045,7 +321045,7 @@ Tilemap:
     m_Data: {r: 1, g: 1, b: 1, a: 1}
   m_TileObjectToInstantiateArray: []
   m_AnimationFrameRate: 1
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 0}
   m_Origin: {x: 0, y: 0, z: 0}
   m_Size: {x: 133, y: 208, z: 1}
   m_TileAnchor: {x: 0.5, y: 0.5, z: 0}
@@ -492329,11 +492329,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1994750403940972139, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 136
+      value: -12.8
       objectReference: {fileID: 0}
     - target: {fileID: 1994750403940972139, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 304
+      value: 4.2
       objectReference: {fileID: 0}
     - target: {fileID: 1994750403940972139, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
       propertyPath: m_LocalPosition.z
@@ -492394,6 +492394,18 @@ PrefabInstance:
     - target: {fileID: 7431792650135662471, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
       propertyPath: m_Name
       value: Tumi Test
+      objectReference: {fileID: 0}
+    - target: {fileID: 8456658880340501629, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
+      propertyPath: m_BackGroundColor.b
+      value: 0.8124142
+      objectReference: {fileID: 0}
+    - target: {fileID: 8456658880340501629, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
+      propertyPath: m_BackGroundColor.g
+      value: 0.9150943
+      objectReference: {fileID: 0}
+    - target: {fileID: 8456658880340501629, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
+      propertyPath: m_BackGroundColor.r
+      value: 0.23740657
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
