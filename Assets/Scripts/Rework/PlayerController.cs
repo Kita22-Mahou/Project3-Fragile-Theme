@@ -53,12 +53,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float maxAimAngle = 165f;
     private Vector2 aimDirection;
 
-    [Header("Jump Trajectory")]
-    [SerializeField] private GameObject trajectoryPoint;
-    [SerializeField] private GameObject trajectoryDotPrefab;
-    [SerializeField] private int trajectoryDotCount = 36;
-    [SerializeField] private float trajectoryTimeStep = 0.05f;
-    private Transform[] trajectoryDots;
+    private JumpTrajectory jumpTrajectory;
 
     [Header("Flip")]
     [SerializeField] private SpriteRenderer playerSprite;
@@ -75,6 +70,7 @@ public class PlayerController : MonoBehaviour
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
+        jumpTrajectory = GetComponent<JumpTrajectory>();
 
         mainCamera = Camera.main;
 
@@ -82,7 +78,7 @@ public class PlayerController : MonoBehaviour
         NormalMaxChargeTime = maxChargeTime;
 
         Grounded();
-        CreateTrajectoryDots();
+        
     }
 
     void Start()
@@ -378,80 +374,22 @@ public class PlayerController : MonoBehaviour
 
 
     #region Jump Trajectory
-    private void CreateTrajectoryDots()
-    {
-        if (trajectoryDotPrefab == null)
-            return;
-
-        trajectoryDots = new Transform[trajectoryDotCount];
-
-        for (int i = 0; i < trajectoryDots.Length; i++)
-        {
-            GameObject dot = Instantiate(trajectoryDotPrefab);
-
-            trajectoryDots[i] = dot.transform;
-            dot.SetActive(false);
-        }
-    }
-
     private void UpdateJumpTrajectory()
     {
-        if (trajectoryDots == null)
+        if (jumpTrajectory == null)
             return;
 
-        if (!isAiming && !isAirAiming)
-        {
-            HideJumpTrajectory();
-            return;
-        }
+        jumpTrajectory.UpdateTrajectory(
+            isAiming || isAirAiming,
+            aimDirection,
+            GetJumpPower()
+        );
+    }
 
-        float launchSpeed = GetJumpPower();
-
-        Vector2 startPosition = trajectoryPoint != null
-            ? trajectoryPoint.transform.position
-            : rb.position;
-
-        Vector2 initialVelocity = aimDirection * launchSpeed;
-
-        float gravityY =
-            Physics2D.gravity.y * rb.gravityScale;
-
-        Vector2 previousPoint = startPosition;
-
-        for (int i = 0; i < trajectoryDots.Length; i++)
-        {
-            float time = (i + 1) * trajectoryTimeStep;
-
-            Vector2 point = startPosition
-                + initialVelocity * time
-                + Vector2.up * (0.5f * gravityY * time * time);
-
-            trajectoryDots[i].gameObject.SetActive(true);
-            trajectoryDots[i].position = point;
-
-            Vector2 segment = point - previousPoint;
-
-            RaycastHit2D hit = Physics2D.Raycast(
-                previousPoint,
-                segment.normalized,
-                segment.magnitude,
-                groundLayer
-            );
-
-            if (hit.collider != null)
-            {
-                trajectoryDots[i].position = hit.point;
-
-                for (int j = i + 1; j < trajectoryDots.Length; j++)
-                {
-                    trajectoryDots[j].gameObject.SetActive(false);
-                }
-
-                break;
-            }
-
-            previousPoint = point;
-        }
+    private void HideJumpTrajectory()
+    {
+        if (jumpTrajectory != null)
+            jumpTrajectory.Hide();
     }
 
     public bool RestoreAirJump()
@@ -474,17 +412,6 @@ public class PlayerController : MonoBehaviour
         return true;
     }
 
-    private void HideJumpTrajectory()
-    {
-        if (trajectoryDots == null)
-            return;
-
-        foreach (Transform dot in trajectoryDots)
-        {
-            if (dot != null)
-                dot.gameObject.SetActive(false);
-        }
-    }
     #endregion 
 
     private IEnumerator ShellState()

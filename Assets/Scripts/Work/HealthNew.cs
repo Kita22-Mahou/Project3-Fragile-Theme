@@ -23,10 +23,6 @@ public class HealthNew : MonoBehaviour
     [Header("Collision Damage")]
 
     [SerializeField] private LayerMask ignoreDamageLayers;
-
-    // ความเร็วชนที่ปลอดภัย ควรมากกว่าความเร็วกระโดดสูงสุดของ PlayerController
-    // (ประมาณ sqrt(jumpForwardForce^2 + maxJumpForce^2) = ~29.5 ตามค่าปัจจุบัน)
-    // เพื่อให้กระโดดลงพื้นระดับเดิมตามปกติไม่เสีย HP
     [SerializeField] private float safeImpactSpeed = 30f;
 
     [SerializeField] private float damagePerSpeed = 2f;

@@ -484486,6 +484486,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 7509916465776107902, guid: 842d7c4bda4b1f8468b2962890bd7997, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1904830763}
+    - targetCorrespondingSourceObject: {fileID: 7509916465776107902, guid: 842d7c4bda4b1f8468b2962890bd7997, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1904830769}
   m_SourcePrefab: {fileID: 100100000, guid: 842d7c4bda4b1f8468b2962890bd7997, type: 3}
 --- !u!114 &1904830751 stripped
 MonoBehaviour:
@@ -484547,6 +484550,7 @@ MonoBehaviour:
   isAiming: 0
   isJumped: 0
   isAirAiming: 0
+  isInShell: 0
   groundCheckPoint: {fileID: 1904830755}
   groundCheckX: 0.5
   groundCheckY: 0.3
@@ -484560,12 +484564,9 @@ MonoBehaviour:
   jumpChargeTime: 0
   isJumpedFromGround: 0
   canAirJump: 1
+  inShellTime: 1
   minAimAngle: 15
   maxAimAngle: 165
-  trajectoryPoint: {fileID: 1904830754}
-  trajectoryDotPrefab: {fileID: 1843257253224819756, guid: 3ef3f55c88efe5641ab91e6d075b3313, type: 3}
-  trajectoryDotCount: 12
-  trajectoryTimeStep: 0.1
   playerSprite: {fileID: 1904830753}
   facingDirection: 1
   movementLocked: 0
@@ -484582,20 +484583,28 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f5883336249220644b29e5877d9a773f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ShellState
-  activationKey: 32
-  shellDuration: 0.75
-  impactDamageMultiplier: 0.5
-  activationCooldown: 0.35
-  minImpactSpeedForBounce: 5
-  bounceSpeed: 5
-  bounceCooldown: 0.15
-  shellVisual: {fileID: 0}
-  rb: {fileID: 0}
-  playerController: {fileID: 0}
-  shellTimer: 0
-  activationCooldownTimer: 0
-  bounceCooldownTimer: 0
-  <IsActive>k__BackingField: 0
+--- !u!114 &1904830769
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 861314003}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1c48ec8b6ab45ef4abc5084d3e46931a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::JumpTrajectory
+  trajectoryPoint: {fileID: 1904830754}
+  trajectoryDotPrefab: {fileID: 1843257253224819756, guid: 3ef3f55c88efe5641ab91e6d075b3313, type: 3}
+  trajectoryDotCount: 36
+  trajectoryTimeStep: 0.05
+  earlyColor: {r: 0, g: 1, b: 0, a: 1}
+  middleColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  lateColor: {r: 1, g: 0, b: 0, a: 1}
+  collisionLayers:
+    serializedVersion: 2
+    m_Bits: 320
 --- !u!1 &1910128580
 GameObject:
   m_ObjectHideFlags: 0
@@ -488815,6 +488824,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f5165ce9f7b710c46b37693d21866d5e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AirJumpItem
+  respawnTime: 5
 --- !u!61 &2016965720
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -490157,6 +490167,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f5165ce9f7b710c46b37693d21866d5e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AirJumpItem
+  respawnTime: 5
 --- !u!61 &2110472398
 BoxCollider2D:
   m_ObjectHideFlags: 0
