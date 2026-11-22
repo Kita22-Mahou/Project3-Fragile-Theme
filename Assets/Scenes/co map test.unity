@@ -485273,6 +485273,11 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 8806305199917051389, guid: 95194a375ae650141abed788246d717d, type: 3}
   m_PrefabInstance: {fileID: 1795581789}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1799246713 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 2125000348887909592, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
+  m_PrefabInstance: {fileID: 4554249235484595177}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1806888752
 GameObject:
   m_ObjectHideFlags: 0
@@ -492376,6 +492381,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4775083938478933952, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
+      propertyPath: maxChargeTime
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4775083938478933952, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
       propertyPath: trajectoryDotCount
       value: 7
       objectReference: {fileID: 0}
@@ -492389,7 +492398,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5611050714896671065, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
       propertyPath: safeImpactSpeed
-      value: 25
+      value: 30
       objectReference: {fileID: 0}
     - target: {fileID: 7431792650135662471, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
       propertyPath: m_Name
@@ -492410,8 +492419,38 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 7431792650135662471, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4554249235484595179}
   m_SourcePrefab: {fileID: 100100000, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
+--- !u!1 &4554249235484595178 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7431792650135662471, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
+  m_PrefabInstance: {fileID: 4554249235484595177}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &4554249235484595179
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4554249235484595178}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1c48ec8b6ab45ef4abc5084d3e46931a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::JumpTrajectory
+  trajectoryPoint: {fileID: 1799246713}
+  trajectoryDotPrefab: {fileID: 1843257253224819756, guid: 3ef3f55c88efe5641ab91e6d075b3313, type: 3}
+  trajectoryDotCount: 36
+  trajectoryTimeStep: 0.075
+  earlyColor: {r: 0, g: 0.5566038, b: 0.00000003317617, a: 1}
+  middleColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  lateColor: {r: 1, g: 0, b: 0, a: 1}
+  collisionLayers:
+    serializedVersion: 2
+    m_Bits: 320
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
