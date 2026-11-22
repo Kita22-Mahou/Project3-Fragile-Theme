@@ -1,11 +1,16 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class HealthNew : MonoBehaviour
 {
+    [Header("Show in inspector")]
+    [SerializeField] private Vector2 speedLinear;
+    [SerializeField] private float speedMagnitude;
+
     [Header("HP")]
 
     public float maxHP = 100f;
@@ -23,7 +28,8 @@ public class HealthNew : MonoBehaviour
     [Header("Collision Damage")]
 
     [SerializeField] private LayerMask ignoreDamageLayers;
-    [SerializeField] private float safeImpactSpeed = 30f;
+
+    public float safeImpactSpeed = 30f;
 
     [SerializeField] private float damagePerSpeed = 2f;
 
@@ -82,9 +88,6 @@ public class HealthNew : MonoBehaviour
     [SerializeField] private int bouncePosY;
     [SerializeField] private float bounceFloorPower;
     [SerializeField] private float bounceWallPower;
-
-    [SerializeField] private int minimumForce;
-    [SerializeField] private bool canBounce;
 
 
     private float crackAtDamagePercent = 10f;
@@ -153,6 +156,18 @@ public class HealthNew : MonoBehaviour
         }
     }
 
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.R))
+        {
+            Die();
+        }
+
+        speedLinear = rb.linearVelocity;
+        speedMagnitude = rb.linearVelocity.magnitude;
+        UpdateIllness();
+    }
+
     private void OnCollisionEnter2D(Collision2D collision)
     {
         if (isDead)
@@ -205,40 +220,31 @@ public class HealthNew : MonoBehaviour
         Vector2 impactVelocity = collision.relativeVelocity;
 
         float impactSpeed;
+        float impactSpeedMagnitude = Mathf.Abs(impactVelocity.magnitude);
 
+        // Bounce Section
         //Debug.Log($"{impactVelocity}");
-        if (hitFloor && impactVelocity.y >= minimumForce) // Floor Bounce
+        if (hitFloor && impactSpeedMagnitude > safeImpactSpeed) // Floor Bounce
         {
             //Debug.Log("Bounce Up");
-            canBounce = true;
             bouncePosX = 0;
             bouncePosY = 1;
         }
-        //else if (hitCeiling && impactVelocity.y <= -minimumForce) // Ceiling Bounce
-        //{
-        //    Debug.Log("Bounce Down");
-        //    canBounce = true;
-        //    bouncePosX = 0;
-        //    bouncePosY = -1;
-        //}
-        else if (hitLeftWall && impactVelocity.x >= minimumForce) // WallLeft Bounce
+        else if (hitLeftWall && impactSpeedMagnitude > safeImpactSpeed) // WallLeft Bounce
         {
             //Debug.Log("Bounce Right");
-            canBounce = true;
             bouncePosX = 1;
             bouncePosY = 0;
         }
-        else if (hitRightWall && impactVelocity.x <= -minimumForce) // WallRight Bounce
+        else if (hitRightWall && impactSpeedMagnitude > safeImpactSpeed) // WallRight Bounce
         {
             //Debug.Log("Bounce Left");
-            canBounce = true;
             bouncePosX = -1;
             bouncePosY = 0;
         }
         else
         {
             //Debug.Log("No Bounce");
-            canBounce = false;
             bouncePosX = 0;
             bouncePosY = 0;
         }
@@ -249,6 +255,7 @@ public class HealthNew : MonoBehaviour
             ShellBounce();
         }
 
+        // Take Damage Section
         // ชนพื้น
         if (hitFloor)
         {
@@ -283,14 +290,13 @@ public class HealthNew : MonoBehaviour
             return;
         }
 
-
         // ความเร็วที่ปลอดภัยไม่ทำให้เสีย HP
         if (impactSpeed <= safeImpactSpeed)
         {
             return;
         }
 
-        float excessSpeed = impactSpeed - safeImpactSpeed;
+        float excessSpeed = impactSpeedMagnitude - safeImpactSpeed;
 
         float damage = Mathf.Min(excessSpeed * damagePerSpeed, maxCollisionDamage);
 
@@ -307,16 +313,6 @@ public class HealthNew : MonoBehaviour
     {
         Vector2 bounceForce = new Vector2(bouncePosX * bounceWallPower, bouncePosY * bounceFloorPower);
         rb.linearVelocity = bounceForce;
-    }
-
-    private void Update()
-    {
-        if (Input.GetKeyDown(KeyCode.R))
-        {
-            Die();
-        }
-
-        UpdateIllness();
     }
 
     // อาการป่วย: อยู่นอก SaveZone จะเสีย HP เป็นรอบ ๆ
@@ -644,7 +640,7 @@ public class HealthNew : MonoBehaviour
         ResetAfterRespawn();
     }
 
-
+    /*
     private void SpawnShellBreakEffect(int stage)
     {
         RectTransform shellRect = shellImage.rectTransform;
@@ -723,7 +719,7 @@ public class HealthNew : MonoBehaviour
             ));
         }
     }
-
+    
 
     private Sprite GetShellShardSprite()
     {
@@ -796,6 +792,7 @@ public class HealthNew : MonoBehaviour
             Destroy(shardRect.gameObject);
         }
     }
+    */
 
     private List<ContactPoint2D> contacts = new List<ContactPoint2D>();
     private void OnDrawGizmos()

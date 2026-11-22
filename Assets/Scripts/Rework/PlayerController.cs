@@ -47,6 +47,7 @@ public class PlayerController : MonoBehaviour
 
     [Header("In Shell Setting")]
     [SerializeField] private float inShellTime = 1;
+    [SerializeField] private bool canBounce;
 
     [Header("Mouse Aim Setting")]
     [SerializeField] private float minAimAngle = 15f;
@@ -62,6 +63,7 @@ public class PlayerController : MonoBehaviour
     [HideInInspector]
     private Rigidbody2D rb;
     private Camera mainCamera;
+    private HealthNew healthNew;
 
     [Header("Health Integration")]
     public bool movementLocked = false;
@@ -71,6 +73,7 @@ public class PlayerController : MonoBehaviour
     {
         rb = GetComponent<Rigidbody2D>();
         jumpTrajectory = GetComponent<JumpTrajectory>();
+        healthNew = GetComponent<HealthNew>();
 
         mainCamera = Camera.main;
 
@@ -194,6 +197,7 @@ public class PlayerController : MonoBehaviour
             jumpState = JumpState.OnGround;
         }
 
+        CanBounceCheck();
         ChangeAnimation();
         UpdateJumpTrajectory();
         //UpdateFacingDirection();
@@ -266,18 +270,6 @@ public class PlayerController : MonoBehaviour
 
         UpdateAimFromMouse();
     }
-
-    /*
-    private Vector2 GetDefaultAimDirection()
-    {
-        Vector2 direction = new Vector2(
-            facingDirection * jumpForwardForce,
-            minJumpForce
-        );
-
-        return direction.normalized;
-    }
-    */
 
     #region Aim Mechanic
     //เอาตำแหน่ง mouse
@@ -372,8 +364,40 @@ public class PlayerController : MonoBehaviour
     }
     #endregion
 
+    #region Shell State  |  Bounce Mechanic
+    private IEnumerator ShellState()
+    {
+        jumpState = JumpState.InShell;
+        isInShell = true;
+
+        yield return new WaitForSeconds(inShellTime);
+
+        jumpState = JumpState.InAir;
+        isInShell = false;
+    }
+
+    private void CanBounceCheck()
+    {
+        if (jumpState != JumpState.InAir)
+        {
+            canBounce = false;
+            return;
+        }
+
+        float speed = Mathf.Abs(rb.linearVelocity.magnitude);
+        if (speed > healthNew.safeImpactSpeed)
+        {
+            canBounce = true;
+        }
+        else
+        {
+            canBounce = false;
+        }
+    }
+    #endregion
 
     #region Jump Trajectory
+
     private void UpdateJumpTrajectory()
     {
         if (jumpTrajectory == null)
@@ -391,7 +415,10 @@ public class PlayerController : MonoBehaviour
         if (jumpTrajectory != null)
             jumpTrajectory.Hide();
     }
+    #endregion 
 
+    #region other
+    // For Air Jump Item
     public bool RestoreAirJump()
     {
         if (movementLocked || canAirJump)
@@ -410,19 +437,6 @@ public class PlayerController : MonoBehaviour
         Debug.Log("Air Jump Restored!");
 
         return true;
-    }
-
-    #endregion 
-
-    private IEnumerator ShellState()
-    {
-        jumpState = JumpState.InShell;
-        isInShell = true;
-
-        yield return new WaitForSeconds(inShellTime);
-
-        jumpState = JumpState.InAir;
-        isInShell = false;
     }
 
     //เปลี่ยนให้ player หันไปตาม mouse
@@ -512,4 +526,5 @@ public class PlayerController : MonoBehaviour
 
         HideJumpTrajectory();
     }
+    #endregion
 }

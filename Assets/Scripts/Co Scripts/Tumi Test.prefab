@@ -340,7 +340,7 @@ Camera:
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 2
-  m_BackGroundColor: {r: 0.20986114, g: 0.33962262, b: 0.32232106, a: 0}
+  m_BackGroundColor: {r: 0.23740657, g: 0.9150943, b: 0.8124142, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
@@ -614,6 +614,7 @@ GameObject:
   - component: {fileID: 3927955348787867388}
   - component: {fileID: 4775083938478933952}
   - component: {fileID: 5611050714896671065}
+  - component: {fileID: 4264462493197244158}
   m_Layer: 7
   m_Name: Tumi Test
   m_TagString: Player
@@ -793,17 +794,13 @@ MonoBehaviour:
   minJumpForce: 16
   maxJumpForce: 50
   jumpForwardForce: 14
-  maxChargeTime: 0.85
+  maxChargeTime: 1
   jumpChargeTime: 0
   isJumpedFromGround: 0
   canAirJump: 1
   inShellTime: 0.4
   minAimAngle: 15
   maxAimAngle: 165
-  trajectoryPoint: {fileID: 2125000348887909592}
-  trajectoryDotPrefab: {fileID: 1843257253224819756, guid: 3ef3f55c88efe5641ab91e6d075b3313, type: 3}
-  trajectoryDotCount: 12
-  trajectoryTimeStep: 0.1
   playerSprite: {fileID: 178772340084094407}
   facingDirection: 1
   movementLocked: 0
@@ -820,13 +817,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 30701b14e56107d41b3fc36c26155ff0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HealthNew
+  speedLinear: {x: 0, y: 0}
+  speedMagnitude: 0
   maxHP: 100
   currentHP: 100
   ignoreDamageLayers:
     serializedVersion: 2
     m_Bits: 0
-  safeImpactSpeed: 25
-  damagePerSpeed: 0.4
+  safeImpactSpeed: 30
+  damagePerSpeed: 0.35
   maxCollisionDamage: 100
   minCollisionDamage: 0
   minVerticalSpeedForWallDamage: 1
@@ -859,12 +858,33 @@ MonoBehaviour:
   bouncePosY: 0
   bounceFloorPower: 30
   bounceWallPower: 10
-  minimumForce: 30
   canBounce: 0
   shellBreakShardCount: 100
   shellBreakShardSpeed: 200
   shellBreakEffectDuration: 0.6
   respawnDelay: 0.6
+--- !u!114 &4264462493197244158
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7431792650135662471}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1c48ec8b6ab45ef4abc5084d3e46931a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::JumpTrajectory
+  trajectoryPoint: {fileID: 2125000348887909592}
+  trajectoryDotPrefab: {fileID: 1843257253224819756, guid: 3ef3f55c88efe5641ab91e6d075b3313, type: 3}
+  trajectoryDotCount: 36
+  trajectoryTimeStep: 0.075
+  earlyColor: {r: 0, g: 0.5566038, b: 0.00000003317617, a: 1}
+  middleColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  lateColor: {r: 1, g: 0, b: 0, a: 1}
+  collisionLayers:
+    serializedVersion: 2
+    m_Bits: 320
 --- !u!1 &7903545531269761763
 GameObject:
   m_ObjectHideFlags: 0
