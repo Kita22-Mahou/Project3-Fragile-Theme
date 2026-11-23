@@ -55,6 +55,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float predictTime;
     [SerializeField] private LayerMask predictLayer;
     [SerializeField] private Collider2D bounceTarget;
+    [SerializeField] private Vector2 bounceNormal;
     [SerializeField] private bool isSlowMotion;
     private CircleCollider2D playerCollider;
 
@@ -493,10 +494,12 @@ public class PlayerController : MonoBehaviour
         if (hit.collider != null)
         {
             bounceTarget = hit.collider;
+            bounceNormal = hit.normal;
         }
         else
         {
             bounceTarget = null;
+            bounceNormal =  Vector2.zero;
         }
     }
 
