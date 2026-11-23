@@ -22,6 +22,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private bool isJumped;
     [SerializeField] private bool isAirAiming;
     [SerializeField] public bool isInShell;
+    [SerializeField] private bool isPredict;
 
     [Header("Ground Check")]
     [SerializeField] private Transform groundCheckPoint;
@@ -50,10 +51,17 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private bool canBounce;
 
     [Header("Predict Impact Setting")]
+    [SerializeField] private float predictTimeMax;
     [SerializeField] private float predictTime;
     [SerializeField] private LayerMask predictLayer;
     [SerializeField] private Collider2D bounceTarget;
+    [SerializeField] private bool isSlowMotion;
     private CircleCollider2D playerCollider;
+
+    [Header("Time Scale Setting")]
+    [SerializeField] private float originalTimeScale;
+    [SerializeField] private float slowTimeScale;
+
 
     [Header("Mouse Aim Setting")]
     [SerializeField] private float minAimAngle = 15f;
@@ -178,6 +186,7 @@ public class PlayerController : MonoBehaviour
         }
 
         // เมื่อ Air Aiming จะทำให้เวลาช้าลง
+        /*
         if (isAirAiming)
         {
             Time.timeScale = 0.33f;
@@ -188,6 +197,7 @@ public class PlayerController : MonoBehaviour
             Time.timeScale = 1f;
             maxChargeTime = NormalMaxChargeTime;
         }
+        */
 
         // กด SpaceBar เพื่อเข้า Shell
         if (Keyboard.current.spaceKey.wasPressedThisFrame)
@@ -200,12 +210,32 @@ public class PlayerController : MonoBehaviour
         //ตัวเปลี่ยนให้เป็น OnGround state
         if (isOnGround && !isAiming)
         {
+            isPredict = false;
             jumpState = JumpState.OnGround;
         }
 
+        // เช็คเงื่อนไขการเข้า Slow Prediction
+        //if ((bounceTarget != null || isPredict) && rb.linearVelocity.magnitude > healthNew.safeImpactSpeed)
+        //{
+        //    Debug.Log("in");
+        //    isPredict = true;
+        //}
+
+        // ทำ slow motion ตอน AirAiming และ Predict เท่านั้น
+        if (isAirAiming || isPredict)
+        {
+            MakeSlowMotion();
+        }
+        else if (!isAirAiming && !isPredict)
+        {
+            StopSlowMotion();
+        }
         PredictImpact();
+
         CanBounceCheck();
+
         ChangeAnimation();
+
         UpdateJumpTrajectory();
         //UpdateFacingDirection();
     }
@@ -415,13 +445,30 @@ public class PlayerController : MonoBehaviour
         // ถ้า Player อยู่นิ่ง ไม่ต้องทำ
         if (velocity.magnitude <= 0f)
         {
+            predictTime = 0.025f;
             return;
         }
 
-        Vector2 direction = velocity.normalized;
+        // ค่อยๆตรวจจากเริ่ม กันการตรวจเลย
+        if (predictTime < predictTimeMax)
+        {
+            predictTime += Time.deltaTime;
+        }
 
-        // ระยะทางที่ต้องการตรวจสอบ
-        float castDistance = velocity.magnitude * predictTime;
+        // Gravity จริงที่ Rigidbody ได้รับ
+        Vector2 gravity = Physics2D.gravity * rb.gravityScale;
+
+        // เวลาที่ต้องการคาดการณ์ล่วงหน้า
+        float time = predictTime;
+
+        // คำนวณระยะการเคลื่อนที่ในอนาคต โดยคิด Gravity
+        Vector2 displacement = velocity * time + 0.5f * gravity * time * time;
+
+        // ทิศทางที่คาดว่าจะเคลื่อนที่ไป
+        Vector2 direction = displacement.normalized;
+
+        // ระยะทางที่คาดว่าจะเคลื่อนที่ไป
+        float castDistance = displacement.magnitude;
 
         // Radius ของ CircleCollider
         float radius = playerCollider.radius *
@@ -430,8 +477,8 @@ public class PlayerController : MonoBehaviour
                           transform.lossyScale.y
                       );
 
-        // จุดเริ่ม CircleCast
-        Vector2 castOrigin = rb.position;
+        // จุดเริ่มต้นที่ตำแหน่ง Collider
+        Vector2 castOrigin = playerCollider.bounds.center;
 
         RaycastHit2D hit = Physics2D.CircleCast(
             castOrigin,
@@ -439,35 +486,42 @@ public class PlayerController : MonoBehaviour
             direction,
             castDistance,
             predictLayer
-            );
-
-        //if (hit.collider == null)
-        //{
-        //    // ไม่พบพื้นผิวที่กำลังจะชน
-        //    if (isSlowMotion)
-        //    {
-        //        StopSlowMotion();
-        //    }
-
-        //    return;
-        //}
-
-        //// คำนวณความเร็วที่กำลังพุ่งเข้าหาพื้นผิว
-        //float approachSpeed = -Vector2.Dot(velocity, hit.normal);
-
-        //if (approachSpeed < minimumParrySpeed)
-        //{
-        //    if (isSlowMotion)
-        //    {
-        //        StopSlowMotion();
-        //    }
-
-        //    return;
-        //}
+        );
 
         // เก็บข้อมูลพื้นผิวที่กำลังจะชน
         //parryNormal = hit.normal;
-        bounceTarget = hit.collider;
+        if (hit.collider != null)
+        {
+            bounceTarget = hit.collider;
+        }
+        else
+        {
+            bounceTarget = null;
+        }
+    }
+
+    private void MakeSlowMotion()
+    {
+        if (isSlowMotion)
+            return;
+
+        Debug.Log("Slow Motion");
+        isSlowMotion = true;
+
+        maxChargeTime = AirAimingMaxChargeTime;
+        Time.timeScale = slowTimeScale;
+    }
+
+    private void StopSlowMotion()
+    {
+        if (!isSlowMotion)
+            return;
+
+        //Debug.Log("Stop Slow Motion");
+        isSlowMotion = false;
+
+        maxChargeTime = NormalMaxChargeTime;
+        Time.timeScale = originalTimeScale;
     }
 
     #region Jump Trajectory
@@ -566,24 +620,39 @@ public class PlayerController : MonoBehaviour
         if (velocity.magnitude <= 0f)
             return;
 
-        // ทิศทางการเคลื่อนที่
-        Vector2 direction = velocity.normalized;
+        Vector2 gravity = Physics2D.gravity * rb.gravityScale;
 
-        // ระยะทางที่ CircleCast จะตรวจจับ
-        float castDistance = velocity.magnitude * predictTime;
+        float time = predictTime;
 
-        // ขนาดวงกลม
+        // คำนวณระยะการเคลื่อนที่ในอนาคต โดยคิด Gravity
+        Vector2 displacement =
+            velocity * time +
+            0.5f * gravity * time * time;
+
+        if (displacement.magnitude <= 0.001f)
+            return;
+
+        // ทิศทาง CircleCast
+        Vector2 direction = displacement.normalized;
+
+        // ระยะทาง CircleCast
+        float castDistance = displacement.magnitude;
+
+        // Radius ของ CircleCollider
         float radius = playerCollider.radius *
-                      Mathf.Max(transform.lossyScale.x, transform.lossyScale.y);
+                      Mathf.Max(
+                          transform.lossyScale.x,
+                          transform.lossyScale.y
+                      );
 
         // จุดเริ่มต้น
-        Vector2 castOrigin = rb.position;
+        Vector2 castOrigin = playerCollider.bounds.center;
 
         // จุดสิ้นสุด
         Vector2 castEnd = castOrigin + direction * castDistance;
 
-        // สีของ Gizmos
-        Gizmos.color = Color.green;
+        // สี Gizmos
+        Gizmos.color = isSlowMotion ? Color.green : Color.yellow;
 
         // วาดวงกลมจุดเริ่มต้น
         Gizmos.DrawWireSphere(castOrigin, radius);
@@ -591,7 +660,7 @@ public class PlayerController : MonoBehaviour
         // วาดวงกลมจุดสิ้นสุด
         Gizmos.DrawWireSphere(castEnd, radius);
 
-        // วาดเส้นแสดงทิศทาง
+        // วาดเส้น CircleCast
         Gizmos.DrawLine(castOrigin, castEnd);
     }
 
