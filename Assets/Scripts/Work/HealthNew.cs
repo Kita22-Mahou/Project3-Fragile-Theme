@@ -114,6 +114,11 @@ public class HealthNew : MonoBehaviour
 
     [SerializeField] private float respawnDelay = 0.6f;
 
+    [Header("Hit Knockback")]
+    [SerializeField] private float knockbackX = 8f;
+    [SerializeField] private float knockbackY = 6f;
+    private float lastFacingX = 1f;
+
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
@@ -165,6 +170,15 @@ public class HealthNew : MonoBehaviour
 
         speedLinear = rb.linearVelocity;
         speedMagnitude = rb.linearVelocity.magnitude;
+
+        speedLinear = rb.linearVelocity;
+        speedMagnitude = rb.linearVelocity.magnitude;
+
+
+        if (Mathf.Abs(speedLinear.x) > 0.5f)
+            lastFacingX = Mathf.Sign(speedLinear.x);
+
+        UpdateIllness();
         UpdateIllness();
     }
 
@@ -192,7 +206,7 @@ public class HealthNew : MonoBehaviour
         foreach (ContactPoint2D contact in collision.contacts)
         {
 
-            contacts.Add(contact); // เอาไว้ดูจุดชน ( OnDrawGizmo อยู่ด้านล่างสุด )
+            contacts.Add(contact);
             Vector2 normal = GetNormalTowardsPlayer(contact);
 
             if (normal.y > 0.5f)
@@ -249,7 +263,6 @@ public class HealthNew : MonoBehaviour
             bouncePosY = 0;
         }
 
-        // ทำให้ player เด้งเมื่อ isInShell
         if (playerController.isInShell)
         {
             playerController.canAirJump = true;
@@ -310,6 +323,49 @@ public class HealthNew : MonoBehaviour
         TakeDamage(damage);
     }
 
+    private void ShellBounce()
+    {
+        Vector2 bounceForce = new Vector2(bouncePosX * bounceWallPower, bouncePosY * bounceFloorPower);
+        rb.linearVelocity = bounceForce;
+    }
+
+    // อาการป่วย: อยู่นอก SaveZone จะเสีย HP เป็นรอบ ๆ
+    private void UpdateIllness()
+    {
+        if (!illnessEnabled || isDead)
+        {
+            illnessTimer = 0f;
+            return;
+        }
+
+        Vector2 bodyPoint = bodyCollider != null
+            ? (Vector2)bodyCollider.bounds.center
+            : (Vector2)transform.position;
+
+        // อยู่ใน SaveZone = ปลอดภัย รีเซ็ตตัวนับ
+        if (SaveZone.IsPointInsideAnyZone(bodyPoint))
+        {
+            illnessTimer = 0f;
+            return;
+        }
+
+        illnessTimer += Time.deltaTime;
+
+        if (illnessTimer < illnessTickInterval)
+        {
+            return;
+        }
+
+        illnessTimer -= illnessTickInterval;
+
+        ApplyDamage(
+            illnessDamagePerSecond * illnessTickInterval,
+            shellBlocksIllness,
+            illnessPlaysDamageSound,
+            illnessFlashesScreen
+        );
+    }
+
     private Vector2 GetNormalTowardsPlayer(ContactPoint2D contact)
     {
         Vector2 normal = contact.normal.normalized;
@@ -323,16 +379,15 @@ public class HealthNew : MonoBehaviour
         return normal;
     }
 
-    private void ShellBounce()
-    {
-        Vector2 bounceForce = new Vector2(bouncePosX * bounceWallPower, bouncePosY * bounceFloorPower);
-        rb.linearVelocity = bounceForce;
-    }
-
     // ดาเมจจากการชน (กระดองป้องกันได้)
     public void TakeDamage(float damage)
     {
+        float hpBefore = currentHP;
+
         ApplyDamage(damage, true, true, true);
+
+        if (!isDead && currentHP < hpBefore)
+            KnockBackFromHit();
     }
 
     private void ApplyDamage(
@@ -375,152 +430,13 @@ public class HealthNew : MonoBehaviour
         }
     }
 
-    // อาการป่วย: อยู่นอก SaveZone จะเสีย HP เป็นรอบ ๆ
-    private void UpdateIllness()
+    private void KnockBackFromHit()
     {
-        if (!illnessEnabled || isDead)
-        {
-            illnessTimer = 0f;
+        if (rb == null)
             return;
-        }
 
-        Vector2 bodyPoint = bodyCollider != null
-            ? (Vector2)bodyCollider.bounds.center
-            : (Vector2)transform.position;
-
-        // อยู่ใน SaveZone = ปลอดภัย รีเซ็ตตัวนับ
-        if (SaveZone.IsPointInsideAnyZone(bodyPoint))
-        {
-            illnessTimer = 0f;
-            return;
-        }
-
-        illnessTimer += Time.deltaTime;
-
-        if (illnessTimer < illnessTickInterval)
-        {
-            return;
-        }
-
-        illnessTimer -= illnessTickInterval;
-
-        ApplyDamage(
-            illnessDamagePerSecond * illnessTickInterval,
-            shellBlocksIllness,
-            illnessPlaysDamageSound,
-            illnessFlashesScreen
-        );
+        rb.linearVelocity = new Vector2(-lastFacingX * knockbackX, knockbackY);
     }
-
-    /*
-    // ระดับความเสียหาย: 0 ปกติ, 1 เริ่มเจ็บ (รอยร้าว), 2 เจ็บมากขึ้น (ช้าลง/กระโดดต่ำ),
-    // 3 เจ็บมาก (ม่านดำ), 4 ตาย  ใช้เกณฑ์เดียวกับรูปกระดองใน UpdateShellUI
-    public int DamageStage => ComputeDamageStage();
-    private int ComputeDamageStage()
-    {
-        if (currentHP <= 0f)
-        {
-            return 4;
-        }
-
-        float damagePercent = (maxHP - currentHP) / maxHP * 100f;
-
-        if (damagePercent >= breakTwoSectionsAtPercent)
-        {
-            return 3;
-        }
-
-        if (damagePercent >= breakOneSectionAtPercent)
-        {
-            return 2;
-        }
-
-        if (damagePercent >= crackAtDamagePercent)
-        {
-            return 1;
-        }
-
-        return 0;
-    }
-    private static float GetStageValue(float[] values, int stage)
-    {
-        if (values == null || values.Length == 0)
-        {
-            return 1f;
-        }
-
-        return values[Mathf.Clamp(stage, 0, values.Length - 1)];
-    }
-
-    // รอยร้าว/ม่านดำบนจอ + ความเร็วเดิน/แรงกระโดดตามระดับความเสียหาย
-    private void ApplyDamageStageEffects()
-    {
-        int stage = Mathf.Min(ComputeDamageStage(), 3);
-        if (playerController != null)
-        {
-            playerController.jumpPowerMultiplier =
-                GetStageValue(stageJumpPowerMultiplier, stage);
-        }
-    }
-    
-    private void UpdateShellUI()
-    {
-        // เอฟเฟกต์ตามระดับความเสียหาย ทำงานแม้ไม่ได้ผูก shellImage
-        ApplyDamageStageEffects();
-
-        if (shellImage == null)
-        {
-            return;
-        }
-
-        float damagePercent = (maxHP - currentHP) / maxHP * 100f;
-
-        int newStage;
-        Sprite targetSprite;
-
-        // HP หมด
-        if (currentHP <= 0f)
-        {
-            newStage = 4;
-            targetSprite = null;
-        }
-        // แตกสองส่วน
-        else if (damagePercent >= breakTwoSectionsAtPercent)
-        {
-            newStage = 3;
-            targetSprite = brokenShell1;
-        }
-        // แตกหนึ่งส่วน
-        else if (damagePercent >= breakOneSectionAtPercent)
-        {
-            newStage = 2;
-            targetSprite = brokenShell2;
-        }
-        // เริ่มร้าว
-        else if (damagePercent >= crackAtDamagePercent)
-        {
-            newStage = 1;
-            targetSprite = crackedShell;
-        }
-        // กระดองเต็ม
-        else
-        {
-            newStage = 0;
-            targetSprite = fullShell;
-        }
-
-        // เล่นเอฟเฟกต์เฉพาะเมื่อระดับความเสียหายเพิ่มขึ้น
-        if (currentShellStage >= 0 && newStage > currentShellStage)
-        {
-            SpawnShellBreakEffect(newStage);
-        }
-
-        currentShellStage = newStage;
-
-        shellImage.sprite = targetSprite;
-        shellImage.enabled = targetSprite != null;
-    }
-    */
 
     public void Heal(float amount)
     {
@@ -529,7 +445,7 @@ public class HealthNew : MonoBehaviour
             return;
         }
 
-        currentHP = Mathf.Clamp(currentHP + amount,0f,maxHP);
+        currentHP = Mathf.Clamp(currentHP + amount, 0f, maxHP);
 
         //UpdateShellUI();
     }
