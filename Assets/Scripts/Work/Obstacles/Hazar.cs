@@ -1,17 +1,12 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(Collider2D))]
 public class Hazard : MonoBehaviour
 {
-
-    [SerializeField] private float respawnDelay = 1f;
-
-    [SerializeField] private float reactivationCooldown = 1.25f;
-
-    private readonly HashSet<PlayerController> playersProcessing = new HashSet<PlayerController>();
-
+    [Header("Knockback")]
+    // แรงเด้งถอยหลังแนวนอน
+    [SerializeField] private float knockbackX = 8f;
+    [SerializeField] private float knockbackY = 6f;
 
     private void Reset()
     {
@@ -23,7 +18,6 @@ public class Hazard : MonoBehaviour
         }
     }
 
-
     private void Awake()
     {
         Collider2D hazardCollider = GetComponent<Collider2D>();
@@ -34,12 +28,22 @@ public class Hazard : MonoBehaviour
         }
     }
 
-
     private void OnTriggerEnter2D(Collider2D other)
+    {
+        ProcessPlayer(other);
+    }
+
+    private void OnTriggerStay2D(Collider2D other)
+    {
+        // เด้งซ้ำทุกครั้งที่ Physics ตรวจพบว่ายังสัมผัส Hazard อยู่
+        ProcessPlayer(other);
+    }
+
+    private void ProcessPlayer(Collider2D other)
     {
         PlayerController player = other.GetComponentInParent<PlayerController>();
 
-        if (player == null || !playersProcessing.Add(player))
+        if (player == null)
         {
             return;
         }
@@ -48,11 +52,10 @@ public class Hazard : MonoBehaviour
 
         if (health != null)
         {
-            health.KnockBackFromHit();
+            KnockBackPlayer(player);
         }
         else
         {
-            // สำรองกรณีตัวละครไม่มี HealthNew
             player.movementLocked = true;
 
             Rigidbody2D rb = player.GetComponent<Rigidbody2D>();
@@ -62,39 +65,20 @@ public class Hazard : MonoBehaviour
                 rb.linearVelocity = Vector2.zero;
                 rb.angularVelocity = 0f;
             }
-
-            StartCoroutine(RespawnWithoutHealth(player.transform));
-        }
-
-        StartCoroutine(ReleaseCooldown(player));
-    }
-
-
-    private IEnumerator RespawnWithoutHealth(Transform player)
-    {
-        yield return new WaitForSecondsRealtime(respawnDelay);
-
-        if (player != null)
-        {
-            bool respawned = Checkpoint.RespawnPlayer(player);
-
-            if (!respawned)
-            {
-                Debug.LogWarning("ไม่มี Checkpoint ที่บันทึกไว้");
-            }
         }
     }
 
-
-    private IEnumerator ReleaseCooldown(PlayerController player)
+    private void KnockBackPlayer(PlayerController player)
     {
-        yield return new WaitForSecondsRealtime(
-            Mathf.Max(respawnDelay, reactivationCooldown)
-        );
+        Rigidbody2D rb = player.GetComponent<Rigidbody2D>();
 
-        if (player != null)
+        if (rb == null)
         {
-            playersProcessing.Remove(player);
+            return;
         }
+
+        float directionX = player.transform.position.x >= transform.position.x ? 1f : -1f;
+
+        rb.linearVelocity = new Vector2(directionX * knockbackX, knockbackY);
     }
 }
