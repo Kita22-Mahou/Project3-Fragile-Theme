@@ -49,6 +49,12 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float inShellTime = 1;
     [SerializeField] private bool canBounce;
 
+    [Header("Predict Impact Setting")]
+    [SerializeField] private float predictTime;
+    [SerializeField] private LayerMask predictLayer;
+    [SerializeField] private Collider2D bounceTarget;
+    private CircleCollider2D playerCollider;
+
     [Header("Mouse Aim Setting")]
     [SerializeField] private float minAimAngle = 15f;
     [SerializeField] private float maxAimAngle = 165f;
@@ -72,6 +78,7 @@ public class PlayerController : MonoBehaviour
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
+        playerCollider = GetComponent<CircleCollider2D>();
         jumpTrajectory = GetComponent<JumpTrajectory>();
         healthNew = GetComponent<HealthNew>();
 
@@ -185,7 +192,6 @@ public class PlayerController : MonoBehaviour
         // กด SpaceBar เพื่อเข้า Shell
         if (Keyboard.current.spaceKey.wasPressedThisFrame)
         {
-            Debug.Log("In Shell!!");
             StartCoroutine(ShellState());
         }
 
@@ -197,6 +203,7 @@ public class PlayerController : MonoBehaviour
             jumpState = JumpState.OnGround;
         }
 
+        PredictImpact();
         CanBounceCheck();
         ChangeAnimation();
         UpdateJumpTrajectory();
@@ -257,7 +264,7 @@ public class PlayerController : MonoBehaviour
             jumpState = JumpState.OnGround;
     }
 
-    // 1 เล็งแล้ว update ตำแหน่งของ mouse
+    // เล็งแล้ว update ตำแหน่งของ mouse
     public void Aiming()
     {
         //Debug.Log("Charging!!");
@@ -367,6 +374,10 @@ public class PlayerController : MonoBehaviour
     #region Shell State  |  Bounce Mechanic
     private IEnumerator ShellState()
     {
+        if (jumpState != JumpState.InAir)
+            yield break;
+
+        Debug.Log("In Shell!!");
         jumpState = JumpState.InShell;
         isInShell = true;
 
@@ -395,6 +406,69 @@ public class PlayerController : MonoBehaviour
         }
     }
     #endregion
+
+    private void PredictImpact()
+    {
+        //Debug.Log("Predicting");
+        Vector2 velocity = rb.linearVelocity;
+
+        // ถ้า Player อยู่นิ่ง ไม่ต้องทำ
+        if (velocity.magnitude <= 0f)
+        {
+            return;
+        }
+
+        Vector2 direction = velocity.normalized;
+
+        // ระยะทางที่ต้องการตรวจสอบ
+        float castDistance = velocity.magnitude * predictTime;
+
+        // Radius ของ CircleCollider
+        float radius = playerCollider.radius *
+                      Mathf.Max(
+                          transform.lossyScale.x,
+                          transform.lossyScale.y
+                      );
+
+        // จุดเริ่ม CircleCast
+        Vector2 castOrigin = rb.position;
+
+        RaycastHit2D hit = Physics2D.CircleCast(
+            castOrigin,
+            radius,
+            direction,
+            castDistance,
+            predictLayer
+            );
+
+        //if (hit.collider == null)
+        //{
+        //    // ไม่พบพื้นผิวที่กำลังจะชน
+        //    if (isSlowMotion)
+        //    {
+        //        StopSlowMotion();
+        //    }
+
+        //    return;
+        //}
+
+        //// คำนวณความเร็วที่กำลังพุ่งเข้าหาพื้นผิว
+        //float approachSpeed = -Vector2.Dot(velocity, hit.normal);
+
+        //if (approachSpeed < minimumParrySpeed)
+        //{
+        //    if (isSlowMotion)
+        //    {
+        //        StopSlowMotion();
+        //    }
+
+        //    return;
+        //}
+
+        // เก็บข้อมูลพื้นผิวที่กำลังจะชน
+        //parryNormal = hit.normal;
+        bounceTarget = hit.collider;
+    }
 
     #region Jump Trajectory
 
@@ -459,7 +533,7 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    private void OnDrawGizmos()
+    private void OnDrawGizmosSelected()
     {
         if (groundCheckPoint == null) return;
 
@@ -472,12 +546,53 @@ public class PlayerController : MonoBehaviour
         Gizmos.DrawRay(origin1, Vector3.down * groundCheckY);
 
         // Left Ray
-        Gizmos.color = Color.green;
+        Gizmos.color = Color.red;
         Gizmos.DrawRay(origin2, Vector3.down * groundCheckY);
 
         // Right Ray
-        Gizmos.color = Color.blue;
+        Gizmos.color = Color.red;
         Gizmos.DrawRay(origin3, Vector3.down * groundCheckY);
+
+        if (rb == null || playerCollider == null)
+        {
+            rb = GetComponent<Rigidbody2D>();
+            playerCollider = GetComponent<CircleCollider2D>();
+            Debug.Log("No rb");
+            return;
+        }
+
+        Vector2 velocity = rb.linearVelocity;
+
+        if (velocity.magnitude <= 0f)
+            return;
+
+        // ทิศทางการเคลื่อนที่
+        Vector2 direction = velocity.normalized;
+
+        // ระยะทางที่ CircleCast จะตรวจจับ
+        float castDistance = velocity.magnitude * predictTime;
+
+        // ขนาดวงกลม
+        float radius = playerCollider.radius *
+                      Mathf.Max(transform.lossyScale.x, transform.lossyScale.y);
+
+        // จุดเริ่มต้น
+        Vector2 castOrigin = rb.position;
+
+        // จุดสิ้นสุด
+        Vector2 castEnd = castOrigin + direction * castDistance;
+
+        // สีของ Gizmos
+        Gizmos.color = Color.green;
+
+        // วาดวงกลมจุดเริ่มต้น
+        Gizmos.DrawWireSphere(castOrigin, radius);
+
+        // วาดวงกลมจุดสิ้นสุด
+        Gizmos.DrawWireSphere(castEnd, radius);
+
+        // วาดเส้นแสดงทิศทาง
+        Gizmos.DrawLine(castOrigin, castEnd);
     }
 
     void ChangeAnimation()

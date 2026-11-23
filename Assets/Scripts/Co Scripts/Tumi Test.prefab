@@ -799,6 +799,7 @@ MonoBehaviour:
   isJumpedFromGround: 0
   canAirJump: 1
   inShellTime: 0.4
+  canBounce: 0
   minAimAngle: 15
   maxAimAngle: 165
   playerSprite: {fileID: 178772340084094407}
@@ -824,7 +825,7 @@ MonoBehaviour:
   ignoreDamageLayers:
     serializedVersion: 2
     m_Bits: 0
-  safeImpactSpeed: 30
+  safeImpactSpeed: 35
   damagePerSpeed: 0.35
   maxCollisionDamage: 100
   minCollisionDamage: 0
@@ -858,7 +859,6 @@ MonoBehaviour:
   bouncePosY: 0
   bounceFloorPower: 30
   bounceWallPower: 10
-  canBounce: 0
   shellBreakShardCount: 100
   shellBreakShardSpeed: 200
   shellBreakEffectDuration: 0.6

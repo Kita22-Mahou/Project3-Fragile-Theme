@@ -192,7 +192,7 @@ public class HealthNew : MonoBehaviour
         foreach (ContactPoint2D contact in collision.contacts)
         {
 
-            contacts.Add(contact);
+            contacts.Add(contact); // เอาไว้ดูจุดชน ( OnDrawGizmo อยู่ด้านล่างสุด )
             Vector2 normal = GetNormalTowardsPlayer(contact);
 
             if (normal.y > 0.5f)
@@ -249,6 +249,7 @@ public class HealthNew : MonoBehaviour
             bouncePosY = 0;
         }
 
+        // ทำให้ player เด้งเมื่อ isInShell
         if (playerController.isInShell)
         {
             playerController.canAirJump = true;
@@ -309,49 +310,6 @@ public class HealthNew : MonoBehaviour
         TakeDamage(damage);
     }
 
-    private void ShellBounce()
-    {
-        Vector2 bounceForce = new Vector2(bouncePosX * bounceWallPower, bouncePosY * bounceFloorPower);
-        rb.linearVelocity = bounceForce;
-    }
-
-    // อาการป่วย: อยู่นอก SaveZone จะเสีย HP เป็นรอบ ๆ
-    private void UpdateIllness()
-    {
-        if (!illnessEnabled || isDead)
-        {
-            illnessTimer = 0f;
-            return;
-        }
-
-        Vector2 bodyPoint = bodyCollider != null
-            ? (Vector2)bodyCollider.bounds.center
-            : (Vector2)transform.position;
-
-        // อยู่ใน SaveZone = ปลอดภัย รีเซ็ตตัวนับ
-        if (SaveZone.IsPointInsideAnyZone(bodyPoint))
-        {
-            illnessTimer = 0f;
-            return;
-        }
-
-        illnessTimer += Time.deltaTime;
-
-        if (illnessTimer < illnessTickInterval)
-        {
-            return;
-        }
-
-        illnessTimer -= illnessTickInterval;
-
-        ApplyDamage(
-            illnessDamagePerSecond * illnessTickInterval,
-            shellBlocksIllness,
-            illnessPlaysDamageSound,
-            illnessFlashesScreen
-        );
-    }
-
     private Vector2 GetNormalTowardsPlayer(ContactPoint2D contact)
     {
         Vector2 normal = contact.normal.normalized;
@@ -363,6 +321,12 @@ public class HealthNew : MonoBehaviour
         }
 
         return normal;
+    }
+
+    private void ShellBounce()
+    {
+        Vector2 bounceForce = new Vector2(bouncePosX * bounceWallPower, bouncePosY * bounceFloorPower);
+        rb.linearVelocity = bounceForce;
     }
 
     // ดาเมจจากการชน (กระดองป้องกันได้)
@@ -409,6 +373,43 @@ public class HealthNew : MonoBehaviour
         {
             Die();
         }
+    }
+
+    // อาการป่วย: อยู่นอก SaveZone จะเสีย HP เป็นรอบ ๆ
+    private void UpdateIllness()
+    {
+        if (!illnessEnabled || isDead)
+        {
+            illnessTimer = 0f;
+            return;
+        }
+
+        Vector2 bodyPoint = bodyCollider != null
+            ? (Vector2)bodyCollider.bounds.center
+            : (Vector2)transform.position;
+
+        // อยู่ใน SaveZone = ปลอดภัย รีเซ็ตตัวนับ
+        if (SaveZone.IsPointInsideAnyZone(bodyPoint))
+        {
+            illnessTimer = 0f;
+            return;
+        }
+
+        illnessTimer += Time.deltaTime;
+
+        if (illnessTimer < illnessTickInterval)
+        {
+            return;
+        }
+
+        illnessTimer -= illnessTickInterval;
+
+        ApplyDamage(
+            illnessDamagePerSecond * illnessTickInterval,
+            shellBlocksIllness,
+            illnessPlaysDamageSound,
+            illnessFlashesScreen
+        );
     }
 
     /*
