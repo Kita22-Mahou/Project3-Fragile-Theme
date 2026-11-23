@@ -114,11 +114,6 @@ public class HealthNew : MonoBehaviour
 
     [SerializeField] private float respawnDelay = 0.6f;
 
-    [Header("Hit Knockback")]
-    [SerializeField] private float knockbackX = 8f;
-    [SerializeField] private float knockbackY = 6f;
-    private float lastFacingX = 1f;
-
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
@@ -173,10 +168,6 @@ public class HealthNew : MonoBehaviour
 
         speedLinear = rb.linearVelocity;
         speedMagnitude = rb.linearVelocity.magnitude;
-
-
-        if (Mathf.Abs(speedLinear.x) > 0.5f)
-            lastFacingX = Mathf.Sign(speedLinear.x);
 
         UpdateIllness();
         UpdateIllness();
@@ -329,7 +320,6 @@ public class HealthNew : MonoBehaviour
         rb.linearVelocity = bounceForce;
     }
 
-    // อาการป่วย: อยู่นอก SaveZone จะเสีย HP เป็นรอบ ๆ
     private void UpdateIllness()
     {
         if (!illnessEnabled || isDead)
@@ -423,14 +413,6 @@ public class HealthNew : MonoBehaviour
         {
             Die();
         }
-    }
-
-    public void KnockBackFromHit()
-    {
-        if (rb == null)
-            return;
-
-        rb.linearVelocity = new Vector2(-lastFacingX * knockbackX, knockbackY);
     }
 
     public void Heal(float amount)
