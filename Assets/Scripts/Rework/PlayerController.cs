@@ -57,6 +57,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private Collider2D bounceTarget;
     [SerializeField] private Vector2 bounceNormal;
     [SerializeField] private bool isSlowMotion;
+    [SerializeField] private bool isTakeDamage = false;
     private CircleCollider2D playerCollider;
 
     [Header("Time Scale Setting")]
@@ -186,22 +187,9 @@ public class PlayerController : MonoBehaviour
             Aiming();
         }
 
-        // เมื่อ Air Aiming จะทำให้เวลาช้าลง
-        /*
-        if (isAirAiming)
-        {
-            Time.timeScale = 0.33f;
-            maxChargeTime = AirAimingMaxChargeTime;
-        }
-        else
-        {
-            Time.timeScale = 1f;
-            maxChargeTime = NormalMaxChargeTime;
-        }
-        */
 
         // กด SpaceBar เพื่อเข้า Shell
-        if (Keyboard.current.spaceKey.wasPressedThisFrame)
+        if (Input.GetMouseButtonUp(1))
         {
             StartCoroutine(ShellState());
         }
@@ -211,16 +199,52 @@ public class PlayerController : MonoBehaviour
         //ตัวเปลี่ยนให้เป็น OnGround state
         if (isOnGround && !isAiming)
         {
-            isPredict = false;
+            bounceNormal = Vector2.zero;
+            bounceTarget = null;
             jumpState = JumpState.OnGround;
         }
 
+        float normalX = Mathf.Abs(bounceNormal.x);
+
+        if (Mathf.Abs(bounceNormal.x) > 0)
+        {
+            if (Mathf.Abs(rb.linearVelocityY) > healthNew.safeImpactSpeed && Mathf.Abs(bounceNormal.y) > Mathf.Abs(bounceNormal.x))
+            {
+                //Debug.Log("isTakeDamage from wall");
+                isTakeDamage = true;
+            }
+            else
+            {
+                isTakeDamage = false;
+            }
+        }
+        else if (Mathf.Abs(bounceNormal.y) > 0)
+        {
+            if (Mathf.Abs(rb.linearVelocityX) > healthNew.safeImpactSpeed && Mathf.Abs(bounceNormal.x) > Mathf.Abs(bounceNormal.y))
+            {
+                //Debug.Log("isTakeDamage from ground");
+                isTakeDamage = true;
+            }
+            else
+            {
+                isTakeDamage = false;
+            }
+        }
+        else
+        {
+            isTakeDamage = false;
+        }
+
         // เช็คเงื่อนไขการเข้า Slow Prediction
-        //if ((bounceTarget != null || isPredict) && rb.linearVelocity.magnitude > healthNew.safeImpactSpeed)
-        //{
-        //    Debug.Log("in");
-        //    isPredict = true;
-        //}
+        if ((bounceTarget != null || isPredict) && isTakeDamage)
+        {
+            //Debug.Log("in");
+            isPredict = true;
+        }
+        else
+        {
+            isPredict = false;
+        }
 
         // ทำ slow motion ตอน AirAiming และ Predict เท่านั้น
         if (isAirAiming || isPredict)
@@ -446,6 +470,8 @@ public class PlayerController : MonoBehaviour
         // ถ้า Player อยู่นิ่ง ไม่ต้องทำ
         if (velocity.magnitude <= 0f)
         {
+            bounceTarget = null;
+            bounceNormal = Vector2.zero;
             predictTime = 0.025f;
             return;
         }
@@ -496,11 +522,12 @@ public class PlayerController : MonoBehaviour
             bounceTarget = hit.collider;
             bounceNormal = hit.normal;
         }
-        else
-        {
-            bounceTarget = null;
-            bounceNormal =  Vector2.zero;
-        }
+    }
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        bounceNormal = Vector2.zero;
+        bounceTarget = null;
     }
 
     private void MakeSlowMotion()
@@ -520,7 +547,7 @@ public class PlayerController : MonoBehaviour
         if (!isSlowMotion)
             return;
 
-        //Debug.Log("Stop Slow Motion");
+        Debug.Log("Stop Slow Motion");
         isSlowMotion = false;
 
         maxChargeTime = NormalMaxChargeTime;

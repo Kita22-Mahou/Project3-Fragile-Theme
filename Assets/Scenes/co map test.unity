@@ -492381,7 +492381,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4775083938478933952, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
       propertyPath: predictTime
-      value: 0
+      value: 0.025
       objectReference: {fileID: 0}
     - target: {fileID: 4775083938478933952, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
       propertyPath: slowTimeScale
