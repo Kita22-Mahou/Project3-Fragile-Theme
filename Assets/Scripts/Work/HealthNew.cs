@@ -382,12 +382,7 @@ public class HealthNew : MonoBehaviour
     // ดาเมจจากการชน (กระดองป้องกันได้)
     public void TakeDamage(float damage)
     {
-        float hpBefore = currentHP;
-
         ApplyDamage(damage, true, true, true);
-
-        if (!isDead && currentHP < hpBefore)
-            KnockBackFromHit();
     }
 
     private void ApplyDamage(
@@ -430,7 +425,7 @@ public class HealthNew : MonoBehaviour
         }
     }
 
-    private void KnockBackFromHit()
+    public void KnockBackFromHit()
     {
         if (rb == null)
             return;

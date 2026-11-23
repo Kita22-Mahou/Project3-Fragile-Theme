@@ -48,9 +48,7 @@ public class Hazard : MonoBehaviour
 
         if (health != null)
         {
-            // ใช้ระบบตายเดียวกับตอน HP หมด
-            // HealthNew จะรอ respawnDelay ก่อนเรียก Checkpoint
-            health.DieFromHazard();
+            health.KnockBackFromHit();
         }
         else
         {
