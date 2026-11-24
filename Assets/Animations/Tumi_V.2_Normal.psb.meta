@@ -50,7 +50,7 @@ ScriptedImporter:
     flipbookColumns: 0
     ignorePngGamma: 0
     cookieMode: 0
-    filterMode: 1
+    filterMode: 0
     aniso: 1
     mipBias: 0
     wrapU: 0
@@ -3279,7 +3279,7 @@ ScriptedImporter:
     - name: Right Arm
       guid: d8c6afbaf0cd3854b9f7a576f1a03d60
       position: {x: 65.440926, y: 108.833275, z: 0}
-      rotation: {x: 0, y: -0, z: 0.98191077, w: 0.18934448}
+      rotation: {x: 0, y: 0, z: 0.98191077, w: 0.18934448}
       length: 65.3992
       parentId: 1
       color:
@@ -3288,12 +3288,21 @@ ScriptedImporter:
     - name: Left Arm
       guid: 2fd857a9770d3f94ebe9b7df4e75a1b4
       position: {x: 59.570168, y: -137.187, z: 0}
-      rotation: {x: 0, y: -0, z: -0.9858405, w: 0.16768582}
+      rotation: {x: 0, y: 0, z: -0.9858405, w: 0.16768582}
       length: 56.41481
       parentId: 1
       color:
         serializedVersion: 2
         rgba: 4278223103
+    - name: Shell_1
+      guid: 270e634dbad6cba4d81980c264ec99a3
+      position: {x: 277.44656, y: 206.33507, z: 0}
+      rotation: {x: 0, y: 0, z: 0.7071075, w: 0.7071061}
+      length: 212.20459
+      parentId: -1
+      color:
+        serializedVersion: 2
+        rgba: 4278255360
     parts:
     - spritePosition:
         x: 32

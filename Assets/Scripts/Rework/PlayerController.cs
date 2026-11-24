@@ -325,13 +325,14 @@ public class PlayerController : MonoBehaviour
             if (groundDetected) break;
         }
 
-        if (!groundDetected || rb.linearVelocityY > 0.01f)
+        if (!groundDetected || rb.linearVelocity.magnitude > 1f)
         {
             isOnGround = false;
+            jumpState = JumpState.InAir;
             return;
         }
 
-        isOnGround = true;
+            isOnGround = true;
         isJumped = false;
         isJumpedFromGround = false;
 

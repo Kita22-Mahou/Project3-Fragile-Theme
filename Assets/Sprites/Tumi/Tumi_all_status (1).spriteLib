@@ -1,0 +1,60 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &1
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a5e6fedc2472449cead18ef23b5cb30d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.2D.Animation.Runtime::UnityEngine.U2D.Animation.SpriteLibrarySourceAsset
+  m_Library:
+  - m_Name: Face
+    m_Hash: 623301721
+    m_CategoryList: []
+    m_OverrideEntries:
+    - m_Name: Face Normal
+      m_Hash: 250407773
+      m_Sprite: {fileID: 5988893815929979880, guid: c32a1945af3ebca4592d0a51ab94d11f, type: 3}
+      m_FromMain: 0
+      m_SpriteOverride: {fileID: 5988893815929979880, guid: c32a1945af3ebca4592d0a51ab94d11f, type: 3}
+    - m_Name: Face 1
+      m_Hash: 793011089
+      m_Sprite: {fileID: -5995414334411674292, guid: c32a1945af3ebca4592d0a51ab94d11f, type: 3}
+      m_FromMain: 0
+      m_SpriteOverride: {fileID: -5995414334411674292, guid: c32a1945af3ebca4592d0a51ab94d11f, type: 3}
+    - m_Name: Face 2
+      m_Hash: 911028779
+      m_Sprite: {fileID: -1040619627543677000, guid: c32a1945af3ebca4592d0a51ab94d11f, type: 3}
+      m_FromMain: 0
+      m_SpriteOverride: {fileID: -1040619627543677000, guid: c32a1945af3ebca4592d0a51ab94d11f, type: 3}
+    m_FromMain: 0
+    m_EntryOverrideCount: 3
+  - m_Name: Shell
+    m_Hash: 72588793
+    m_CategoryList: []
+    m_OverrideEntries:
+    - m_Name: Shell Normal
+      m_Hash: 145540211
+      m_Sprite: {fileID: -491827880794081629, guid: c32a1945af3ebca4592d0a51ab94d11f, type: 3}
+      m_FromMain: 0
+      m_SpriteOverride: {fileID: -491827880794081629, guid: c32a1945af3ebca4592d0a51ab94d11f, type: 3}
+    - m_Name: Shell 1
+      m_Hash: 239273785
+      m_Sprite: {fileID: 9163656210814844226, guid: c32a1945af3ebca4592d0a51ab94d11f, type: 3}
+      m_FromMain: 0
+      m_SpriteOverride: {fileID: 9163656210814844226, guid: c32a1945af3ebca4592d0a51ab94d11f, type: 3}
+    - m_Name: Shell 2
+      m_Hash: 390747779
+      m_Sprite: {fileID: -2740941885530313567, guid: c32a1945af3ebca4592d0a51ab94d11f, type: 3}
+      m_FromMain: 0
+      m_SpriteOverride: {fileID: -2740941885530313567, guid: c32a1945af3ebca4592d0a51ab94d11f, type: 3}
+    m_FromMain: 0
+    m_EntryOverrideCount: 3
+  m_PrimaryLibraryGUID: 
+  m_ModificationHash: 639311321985147902
+  m_Version: 1
