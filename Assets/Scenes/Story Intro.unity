@@ -746,7 +746,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::StoryBgm
   bgmClip: {fileID: 8300000, guid: 57ea46706cfc5fd4db1197be0e7e5899, type: 3}
-  volume: 0.1
+  volume: 0
   loop: 1
   playOnStart: 1
 --- !u!82 &974653830
