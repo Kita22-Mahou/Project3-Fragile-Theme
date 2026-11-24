@@ -281,7 +281,7 @@ MonoBehaviour:
   waitTime: 0
   loopMovement: 1
   isFlipSprite: 1
-  pauseWhenPlayerTouches: 1
+  pauseWhenPlayerTouches: 0
   playerHitPauseDuration: 0.5
   topTolerance: 0.15
 --- !u!114 &1105082749485029170

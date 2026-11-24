@@ -14,9 +14,9 @@ GameObject:
   - component: {fileID: 2527224637288325258}
   - component: {fileID: 6065558260715225155}
   - component: {fileID: 4751533124785210743}
-  m_Layer: 6
+  m_Layer: 9
   m_Name: Fish 2
-  m_TagString: Untagged
+  m_TagString: Hazard
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -177,7 +177,7 @@ MonoBehaviour:
   waitTime: 0.5
   loopMovement: 1
   isFlipSprite: 1
-  pauseWhenPlayerTouches: 1
+  pauseWhenPlayerTouches: 0
   playerHitPauseDuration: 1
   topTolerance: 0.15
 --- !u!114 &4751533124785210743
