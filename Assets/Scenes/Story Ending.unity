@@ -280,31 +280,41 @@ MonoBehaviour:
   - show:
     - {fileID: 932081059}
     playTextSound: 0
+    voiceOverClip: {fileID: 0}
   - show:
     - {fileID: 541724461}
     playTextSound: 1
+    voiceOverClip: {fileID: 8300000, guid: 249957fda32c9534cbfa88b2f60d5a77, type: 3}
   - show:
     - {fileID: 671902217}
     playTextSound: 0
+    voiceOverClip: {fileID: 0}
   - show:
     - {fileID: 450161509}
     playTextSound: 1
+    voiceOverClip: {fileID: 8300000, guid: ce3b40b237964d04496cb8f0d5f2ce5c, type: 3}
   - show:
     - {fileID: 1652467122}
     playTextSound: 0
-  - show:
-    - {fileID: 2080273931}
-    playTextSound: 1
+    voiceOverClip: {fileID: 0}
   - show:
     - {fileID: 1982371934}
     playTextSound: 1
+    voiceOverClip: {fileID: 8300000, guid: b2df5b72d72e367438b6fa4537b1d189, type: 3}
   - show:
     - {fileID: 1850920968}
     playTextSound: 1
+    voiceOverClip: {fileID: 8300000, guid: 0dcc1ba3f201dbe47bd7c520e6eca46d, type: 3}
+  - show:
+    - {fileID: 2080273931}
+    playTextSound: 1
+    voiceOverClip: {fileID: 8300000, guid: 71616df96d48729409215162af86c252, type: 3}
   nextSceneAfterFinish: co map test
   sfxSource: {fileID: 0}
   textAppearClip: {fileID: 8300000, guid: c55b991fe8cf6ed4ebfb33874ff8f573, type: 3}
   sfxVolume: 0.25
+  voiceOverSource: {fileID: 0}
+  voiceOverVolume: 1
 --- !u!114 &180107255
 MonoBehaviour:
   m_ObjectHideFlags: 0

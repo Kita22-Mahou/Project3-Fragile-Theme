@@ -6,12 +6,8 @@ using UnityEngine;
 [RequireComponent(typeof(Collider2D))]
 public class MovingPlatform2D : MonoBehaviour
 {
-    // =========================================================
-    // MOVEMENT PATH
-    // =========================================================
 
     [Header("Movement Path")]
-
     [Tooltip("ระยะเคลื่อนที่ในแต่ละช่วง วัดจากจุดก่อนหน้า")]
     [SerializeField]
     private Vector2[] movementSteps =
@@ -31,18 +27,9 @@ public class MovingPlatform2D : MonoBehaviour
     [SerializeField] private bool loopMovement = true;
 
 
-    // =========================================================
-    // PLAYER CARRY
-    // =========================================================
-
     [Header("Player Carry")]
 
     [SerializeField] private float topTolerance = 0.15f;
-
-
-    // =========================================================
-    // COMPONENTS
-    // =========================================================
 
     private Rigidbody2D rb;
     private Collider2D platformCollider;
@@ -50,10 +37,6 @@ public class MovingPlatform2D : MonoBehaviour
     private SpriteRenderer sprite;
 
     [SerializeField] private bool isFlipSprite = false;
-
-    // =========================================================
-    // PATH STATE
-    // =========================================================
 
     private Vector2[] pathPoints;
 
