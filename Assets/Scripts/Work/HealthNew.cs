@@ -41,12 +41,6 @@ public class HealthNew : MonoBehaviour
     // ดาเมจที่ต่ำกว่าค่านี้ถือเป็นแค่การกระทบเบา ๆ จะไม่หัก HP
     [SerializeField] private float minCollisionDamage = 1f;
 
-    [SerializeField] private Transform fragmentSpawnPoint;
-
-    [SerializeField] private GameObject lowHurt;
-    [SerializeField] private GameObject midHurt;
-    [SerializeField] private GameObject highHurt;
-
     [Header("Wall Collision")]
 
     [SerializeField] private float minVerticalSpeedForWallDamage = 1f;
@@ -209,7 +203,7 @@ public class HealthNew : MonoBehaviour
     private Rigidbody2D rb;
 
     private PlayerController playerController;
-    
+
     [Header("Damage Bubble Effect")]
     [Tooltip("Sprite ฟองที่อนุญาตให้สุ่มสร้างเมื่อได้รับดาเมจ ใส่เฉพาะ Sprite ที่ต้องการใช้")]
     [SerializeField] private Sprite[] bubbleSprites;
@@ -250,7 +244,7 @@ public class HealthNew : MonoBehaviour
 
     private readonly List<GameObject> activeDamageEffectObjects = new List<GameObject>();
 
-    
+
     [SerializeField] private float respawnDelay = 0.6f;
 
     private void Awake()
@@ -412,6 +406,7 @@ public class HealthNew : MonoBehaviour
                 Debug.Log("Parry!");
                 playerController.canTempAim = true;
                 playerController.isBounceSuccessed = true;
+                playerController.NotifyParrySuccess();
                 //Debug.Log($"{playerController.canTempAim}");
                 ShellBounce();
                 return;
@@ -468,6 +463,7 @@ public class HealthNew : MonoBehaviour
         {
             playerController.canTempAim = true;
             playerController.isBounceSuccessed = true;
+            playerController.NotifyParrySuccess();
             //Debug.Log($"{playerController.canTempAim}");
             ShellBounce();
             return;
@@ -585,20 +581,7 @@ public class HealthNew : MonoBehaviour
             DamageVignette.Flash();
         }
 
-        if (damage <= 5)
-        {
-            Instantiate(lowHurt, fragmentSpawnPoint);
-        }
-        else if (damage > 5 && damage <= 10)
-        {
-            Instantiate(midHurt, fragmentSpawnPoint);
-        }
-        else if (damage > 10)
-        {
-            Instantiate(highHurt, fragmentSpawnPoint);
-        }
-
-            UpdateShellUI();
+        UpdateShellUI();
 
         // Spawn the floating bubble and Shell HP fragments for every actual hit.
         SpawnBubbleDamageParticle();

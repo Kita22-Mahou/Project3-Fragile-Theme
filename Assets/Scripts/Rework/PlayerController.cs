@@ -55,6 +55,20 @@ public class PlayerController : MonoBehaviour
     [SerializeField] public bool canTempAim;
     [SerializeField] private bool isWantSlowParry = false;
 
+    [Header("In Shell Bubble Visual")]
+    [Tooltip("Sprite ฟองอากาศที่จะแสดงคลุมตัว Tumi ระหว่างอยู่ในสถานะ InShell")]
+    [SerializeField] private Sprite inShellBubbleSprite;
+    [Tooltip("ขนาดของฟองอากาศ ปรับให้คลุมตัวละครพอดี")]
+    [SerializeField] private Vector2 inShellBubbleScale = new Vector2(1.5f, 1.5f);
+    [Tooltip("ตำแหน่งของฟองอากาศเทียบกับตัว Tumi")]
+    [SerializeField] private Vector2 inShellBubbleOffset = Vector2.zero;
+    [Tooltip("ค่าลำดับการวาดเทียบกับ Sprite ของผู้เล่น (ค่าบวก = วาดด้านหน้า)")]
+    [SerializeField] private int inShellBubbleSortingOrderOffset = 1;
+
+    private SpriteRenderer inShellBubbleRenderer;
+    private bool showParryBubbleUntilGrounded;
+    private bool hasLeftGroundAfterParry;
+
     [Header("Predict Impact Setting")]
     [SerializeField] private float predictTimeMax;
     [SerializeField] private float predictTime;
@@ -113,8 +127,65 @@ public class PlayerController : MonoBehaviour
         AirAimingMaxChargeTime = maxChargeTime / 3f;
         NormalMaxChargeTime = maxChargeTime;
 
+        SetupInShellBubbleVisual();
         Grounded();
-        
+
+    }
+
+    private void SetupInShellBubbleVisual()
+    {
+        if (inShellBubbleSprite == null)
+        {
+            return;
+        }
+
+        GameObject bubbleObject = new GameObject("InShellBubbleVisual");
+        bubbleObject.transform.SetParent(transform, false);
+        bubbleObject.transform.localPosition = inShellBubbleOffset;
+        bubbleObject.transform.localRotation = Quaternion.identity;
+        bubbleObject.transform.localScale = new Vector3(
+            inShellBubbleScale.x,
+            inShellBubbleScale.y,
+            1f
+        );
+
+        inShellBubbleRenderer = bubbleObject.AddComponent<SpriteRenderer>();
+        inShellBubbleRenderer.sprite = inShellBubbleSprite;
+        inShellBubbleRenderer.enabled = false;
+
+        // วาดฟองอากาศให้อยู่ด้านหน้าของ Sprite ผู้เล่น
+        if (playerSprite != null)
+        {
+            inShellBubbleRenderer.sortingLayerID = playerSprite.sortingLayerID;
+            inShellBubbleRenderer.sortingOrder =
+                playerSprite.sortingOrder + inShellBubbleSortingOrderOffset;
+        }
+    }
+
+    private void SetInShellBubbleVisible(bool visible)
+    {
+        if (inShellBubbleRenderer != null)
+        {
+            inShellBubbleRenderer.enabled = visible;
+        }
+    }
+
+    // เรียกจาก HealthNew เฉพาะเมื่อ Parry สำเร็จขณะอยู่ใน InShell
+    public void NotifyParrySuccess()
+    {
+        if (!isInShell)
+            return;
+
+        showParryBubbleUntilGrounded = true;
+        hasLeftGroundAfterParry = !isOnGround;
+        SetInShellBubbleVisible(true);
+    }
+
+    private void HideParryBubbleAfterLanding()
+    {
+        showParryBubbleUntilGrounded = false;
+        hasLeftGroundAfterParry = false;
+        SetInShellBubbleVisible(false);
     }
 
     void Start()
@@ -334,6 +405,13 @@ public class PlayerController : MonoBehaviour
             if (groundDetected) break;
         }
 
+        // หลัง Parry สำเร็จ ต้องรอให้ Tumi กลับมาลงพื้นก่อนซ่อน Bubble
+        if (showParryBubbleUntilGrounded &&
+            (!groundDetected || rb.linearVelocity.sqrMagnitude > 0.0001f))
+        {
+            hasLeftGroundAfterParry = true;
+        }
+
         //if (groundDetected)
         //{
         //    isOnGround = true;
@@ -353,6 +431,12 @@ public class PlayerController : MonoBehaviour
             return;
 
         isOnGround = true;
+
+        if (showParryBubbleUntilGrounded && hasLeftGroundAfterParry && groundDetected)
+        {
+            HideParryBubbleAfterLanding();
+        }
+
         isJumped = false;
         isJumpedFromGround = false;
         jumpState = JumpState.OnGround;
@@ -503,12 +587,13 @@ public class PlayerController : MonoBehaviour
         if (jumpState != JumpState.InAir)
             yield break;
 
-        //Debug.Log("In Shell!!");
+        // เข้า InShell แต่ยังไม่แสดง Bubble จนกว่า Parry จะสำเร็จ
         jumpState = JumpState.InShell;
         isInShell = true;
 
         yield return new WaitForSeconds(inShellTime);
 
+        // ออกจาก InShell; ถ้า Parry สำเร็จ Bubble จะคงอยู่จนกว่าจะลงพื้น
         jumpState = JumpState.InAir;
         isInShell = false;
     }
@@ -727,6 +812,8 @@ public class PlayerController : MonoBehaviour
         movementLocked = false;
 
         jumpState = JumpState.OnGround;
+        isInShell = false;
+        HideParryBubbleAfterLanding();
 
         isOnGround = false;
         isAiming = false;
