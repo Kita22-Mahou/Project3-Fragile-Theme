@@ -492396,6 +492396,10 @@ PrefabInstance:
       value: 0.1
       objectReference: {fileID: 0}
     - target: {fileID: 4775083938478933952, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
+      propertyPath: isWantSlowParry
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4775083938478933952, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
       propertyPath: isBounceSuccessed
       value: 0
       objectReference: {fileID: 0}

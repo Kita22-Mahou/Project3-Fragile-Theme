@@ -51,6 +51,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float inShellTime = 1;
     [SerializeField] private bool canBounce;
     [SerializeField] public bool canTempAim;
+    [SerializeField] private bool isWantSlowParry = false;
 
     [Header("Predict Impact Setting")]
     [SerializeField] private float predictTimeMax;
@@ -261,10 +262,16 @@ public class PlayerController : MonoBehaviour
         if ((bounceTarget != null || isPredict) && isTakeDamage)
         {
             //Debug.Log("in");
+            if (!isWantSlowParry)
+                return;
+
             isPredict = true;
         }
         else
         {
+            if (!isWantSlowParry)
+                return;
+
             isPredict = false;
         }
 
