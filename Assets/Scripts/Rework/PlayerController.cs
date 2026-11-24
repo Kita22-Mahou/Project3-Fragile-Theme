@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 using UnityEngine.InputSystem;
+using Unity.VisualScripting;
 
 public class PlayerController : MonoBehaviour
 {
@@ -329,7 +330,13 @@ public class PlayerController : MonoBehaviour
             if (groundDetected) break;
         }
 
-        if ((!groundDetected && rb.linearVelocity.magnitude > 0.001f) || (isJumped && rb.linearVelocity.magnitude > 0.001f))
+        //if (groundDetected)
+        //{
+        //    isOnGround = true;
+        //    jumpState = JumpState.OnGround;
+        //}
+
+        if (!groundDetected && rb.linearVelocity.magnitude > 0f)
         {
             isOnGround = false;
             jumpState = JumpState.InAir;
@@ -337,6 +344,10 @@ public class PlayerController : MonoBehaviour
         }
 
         //Debug.Log("in");
+
+        if (isJumped && rb.linearVelocity.magnitude > 0.001f)
+            return;
+
         isOnGround = true;
         isJumped = false;
         isJumpedFromGround = false;
