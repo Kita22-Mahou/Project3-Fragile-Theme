@@ -29,6 +29,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private Transform groundCheckPoint;
     [SerializeField] private float groundCheckX = 0.2f;
     [SerializeField] private float groundCheckY = 0.2f;
+    [SerializeField] private bool groundDetected = false;
     [SerializeField] private LayerMask groundLayer;
 
     [Header("Jump Setting")]
@@ -206,6 +207,7 @@ public class PlayerController : MonoBehaviour
         //เล็งเมื่อกำลังกด mouse และครบเงื่อนไข
         if (isAiming || isAirAiming || isTempAiming)
         {
+
             Aiming();
         }
 
@@ -219,10 +221,10 @@ public class PlayerController : MonoBehaviour
         Grounded();
 
         //ตัวเปลี่ยนให้เป็น OnGround state
-        if (isOnGround && !isAiming)
-        {
-            jumpState = JumpState.OnGround;
-        }
+        //if (isOnGround && !isAiming)
+        //{
+        //    jumpState = JumpState.OnGround;
+        //}
 
         float normalX = Mathf.Abs(bounceNormal.x);
         float normalY = Mathf.Abs(bounceNormal.y);
@@ -299,10 +301,12 @@ public class PlayerController : MonoBehaviour
         if (groundCheckPoint == null || rb == null)
         {
             isOnGround = false;
+            groundDetected = false;
             return;
         }
 
-        bool groundDetected = false;
+        // Reset ก่อนตรวจจับทุกครั้ง
+        groundDetected = false;
 
         for (int i = -1; i <= 1; i++)
         {
@@ -318,29 +322,40 @@ public class PlayerController : MonoBehaviour
                     hit.normal.y < 0.55f)
                     continue;
 
+                //Debug.Log("in");
                 groundDetected = true;
-                break;
             }
 
             if (groundDetected) break;
         }
 
-        if (!groundDetected || rb.linearVelocity.magnitude > 0.001f)
+        if ((!groundDetected && rb.linearVelocity.magnitude > 0.001f) || (isJumped && rb.linearVelocity.magnitude > 0.001f))
         {
             isOnGround = false;
             jumpState = JumpState.InAir;
             return;
         }
 
-            isOnGround = true;
+        //Debug.Log("in");
+        isOnGround = true;
         isJumped = false;
         isJumpedFromGround = false;
+        jumpState = JumpState.OnGround;
 
         canTempAim = false;
 
-        if (isAirAiming || isTempAiming)
+        if (isAirAiming)
         {
             isAirAiming = false;
+            jumpChargeTime = 0f;
+            Time.timeScale = 1f;
+            maxChargeTime = NormalMaxChargeTime;
+            HideJumpTrajectory();
+        }
+
+        if (isTempAiming)
+        {
+            isTempAiming = false;
             jumpChargeTime = 0f;
             Time.timeScale = 1f;
             maxChargeTime = NormalMaxChargeTime;
