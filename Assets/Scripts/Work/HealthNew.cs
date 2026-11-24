@@ -4,6 +4,7 @@ using System.Drawing;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.U2D.Animation;
 
 public class HealthNew : MonoBehaviour
 {
@@ -71,12 +72,105 @@ public class HealthNew : MonoBehaviour
     [Tooltip("ตัวคูณแรงกระโดด ตามระดับความเสียหาย (ความสูงกระโดดลดลงตามกำลังสองของค่านี้)")]
     [SerializeField] private float[] stageJumpPowerMultiplier = { 1f, 1f, 0.85f, 0.85f };
 
-    [Header("Shell HP UI")]
+    [Header("Shell HP UI (5 Phases)")]
     [SerializeField] private Image shellImage;
+
+    [Tooltip("Phase 1: UI_Shell (กระดองปกติ)")]
     [SerializeField] private Sprite fullShell;
+
+    [Tooltip("Phase 2: UI_Shell_0")]
     [SerializeField] private Sprite crackedShell;
+
+    [Tooltip("Phase 3: UI_Shell_1")]
     [SerializeField] private Sprite brokenShell2;
+
+    [Tooltip("Phase 4: UI_Shell_2")]
     [SerializeField] private Sprite brokenShell1;
+
+    [Tooltip("Phase 5: UI_Shell_3 (เสียหายมากที่สุด)")]
+    [SerializeField] private Sprite brokenShellFinal;
+
+    [Header("Shell UI Damage Thresholds (% Damage Taken)")]
+    [Tooltip("เมื่อเสีย HP ถึงค่านี้ จะเปลี่ยนเป็น Phase 2")]
+    [Range(0f, 100f)]
+    [SerializeField] private float shellPhase2AtDamagePercent = 20f;
+
+    [Tooltip("เมื่อเสีย HP ถึงค่านี้ จะเปลี่ยนเป็น Phase 3")]
+    [Range(0f, 100f)]
+    [SerializeField] private float shellPhase3AtDamagePercent = 40f;
+
+    [Tooltip("เมื่อเสีย HP ถึงค่านี้ จะเปลี่ยนเป็น Phase 4")]
+    [Range(0f, 100f)]
+    [SerializeField] private float shellPhase4AtDamagePercent = 60f;
+
+    [Tooltip("เมื่อเสีย HP ถึงค่านี้ จะเปลี่ยนเป็น Phase 5")]
+    [Range(0f, 100f)]
+    [SerializeField] private float shellPhase5AtDamagePercent = 80f;
+
+    [Header("Phase 5 Critical Effect")]
+    [SerializeField] private bool phase5ShakeEnabled = true;
+    [Tooltip("ระยะสั่นของกระดอง UI หน่วยเป็น UI units")]
+    [SerializeField] private float phase5ShakeAmount = 3f;
+    [Tooltip("ความเร็วการสั่น")]
+    [SerializeField] private float phase5ShakeSpeed = 25f;
+    [SerializeField] private bool phase5BlinkEnabled = true;
+    [Tooltip("ความเร็วการกระพริบ")]
+    [SerializeField] private float phase5BlinkSpeed = 4f;
+    [Range(0f, 1f)]
+    [Tooltip("ค่า Alpha ต่ำสุดตอนกระพริบ: 0 = หายไป, 1 = ไม่โปร่งใส")]
+    [SerializeField] private float phase5MinAlpha = 0.2f;
+
+    private RectTransform shellImageRect;
+    private Vector2 shellImageOriginalPosition;
+    private UnityEngine.Color shellImageOriginalColor = UnityEngine.Color.white;
+    private bool shellPhase5EffectActive;
+
+    [Header("Damage Hit Effect")]
+    [SerializeField] private bool damageHitShakeEnabled = true;
+    [Tooltip("ระยะเวลาที่ UI กระดองสั่นหลังได้รับดาเมจ")]
+    [SerializeField] private float damageHitShakeDuration = 0.22f;
+    [Tooltip("ระยะการสั่นของ UI กระดอง")]
+    [SerializeField] private float damageHitShakeAmount = 6f;
+    [Tooltip("ความเร็วการสั่นหลังได้รับดาเมจ")]
+    [SerializeField] private float damageHitShakeSpeed = 45f;
+
+    [SerializeField] private bool damageRedFlashEnabled = true;
+    [Tooltip("ระยะเวลาที่ UI กระดองเปลี่ยนเป็นสีแดง")]
+    [SerializeField] private float damageRedFlashDuration = 0.2f;
+    [Range(0f, 1f)]
+    [Tooltip("ความเข้มของสีแดง: 0 = ไม่เปลี่ยนสี, 1 = แดงเต็มที่")]
+    [SerializeField] private float damageRedFlashStrength = 0.85f;
+    [SerializeField] private UnityEngine.Color damageRedFlashColor = new UnityEngine.Color(1f, 0.1f, 0.1f, 1f);
+
+    private float damageHitShakeTimer;
+    private float damageRedFlashTimer;
+
+    [Header("Sprite Resolver (HP Damage Stages)")]
+    [Tooltip("Sprite Resolver ของกระดอง (ลากจาก Bone Shell มาใส่)")]
+    [SerializeField] private SpriteResolver shellSpriteResolver;
+
+    [Tooltip("Sprite Resolver ของใบหน้า (ลากจาก Bone Face มาใส่)")]
+    [SerializeField] private SpriteResolver faceSpriteResolver;
+
+    [Tooltip("ใส่ Label จาก Sprite Library ตามลำดับ: 0=ปกติ, 1=เริ่มเสียหาย, 2=เสียหายขั้น 2, 3=เสียหายขั้น 3")]
+    [SerializeField]
+    private string[] shellResolverLabels =
+    {
+        "Shell Normal",
+        "",
+        "",
+        ""
+    };
+
+    [Tooltip("ใส่ Label จาก Sprite Library ตามลำดับ: 0=ปกติ, 1=เริ่มเสียหาย, 2=เสียหายขั้น 2, 3=เสียหายขั้น 3")]
+    [SerializeField]
+    private string[] faceResolverLabels =
+    {
+        "Face Normal",
+        "",
+        "",
+        ""
+    };
 
     [Header("Death Fade")]
     [Tooltip("CanvasGroup ของ Image สีดำเต็มจอ (เว้นว่าง = ไม่ fade)")]
@@ -92,30 +186,65 @@ public class HealthNew : MonoBehaviour
     [SerializeField] private float bounceWallPower;
 
 
-    private float crackAtDamagePercent = 10f;
-    private float breakOneSectionAtPercent = 33f;
-    private float breakTwoSectionsAtPercent = 66f;
+    [Header("Sprite Resolver HP Thresholds (% Damage Taken)")]
+    [Range(0f, 100f)]
+    [SerializeField] private float crackAtDamagePercent = 10f;
+
+    [Range(0f, 100f)]
+    [SerializeField] private float breakOneSectionAtPercent = 33f;
+
+    [Range(0f, 100f)]
+    [SerializeField] private float breakTwoSectionsAtPercent = 66f;
+
+    private int currentSpriteStage = -1;
 
     private ShellDefense shellDefense;
 
     private Rigidbody2D rb;
 
     private PlayerController playerController;
+    
+    [Header("Damage Bubble Effect")]
+    [Tooltip("Sprite ฟองที่อนุญาตให้สุ่มสร้างเมื่อได้รับดาเมจ ใส่เฉพาะ Sprite ที่ต้องการใช้")]
+    [SerializeField] private Sprite[] bubbleSprites;
 
-    /*
-    [Header("Shell Break Effect")]
+    [Tooltip("จำนวนฟองที่สร้างต่อการได้รับดาเมจหนึ่งครั้ง")]
+    [SerializeField] private int bubbleSpawnCount = 1;
 
-    [SerializeField] private int shellBreakShardCount = 12;
+    [Range(0.05f, 1f)]
+    [Tooltip("ขนาดฟองเทียบกับขนาด Shell HP")]
+    [SerializeField] private float bubbleSizeMultiplier = 0.28f;
 
+    [Tooltip("ระยะทางที่ฟองลอยขึ้น (หน่วย UI)")]
+    [SerializeField] private float bubbleFloatDistance = 50f;
+
+    [Tooltip("เวลาที่ใช้ลอยขึ้น")]
+    [SerializeField] private float bubbleFloatDuration = 0.8f;
+
+    [Tooltip("ระยะเบี่ยงด้านข้างแบบสุ่ม (หน่วย UI)")]
+    [SerializeField] private float bubbleFloatSideDrift = 12f;
+
+    [Tooltip("ระยะสุ่มตำแหน่งเริ่มต้นรอบ ๆ Shell HP (หน่วย UI)")]
+    [SerializeField] private float bubbleSpawnSpread = 10f;
+
+    [Header("Shell HP Break Effect")]
+    [Tooltip("Sprite เศษกระดอง 3 แบบจากภาพที่ส่งมา")]
+    [SerializeField] private Sprite[] shellFragmentSprites;
+
+    [SerializeField] private int shellBreakShardCount = 6;
     [SerializeField] private float shellBreakShardSpeed = 180f;
-
     [SerializeField] private float shellBreakEffectDuration = 0.45f;
 
-    private int currentShellStage = -1;
+    [Tooltip("แรงโน้มถ่วงของเศษกระดอง UI")]
+    [SerializeField] private float shellBreakGravity = 360f;
 
-    private static Sprite shellShardSprite;
+    [Range(0.1f, 0.8f)]
+    [Tooltip("ขนาดเศษกระดองเทียบกับขนาด Shell HP")]
+    [SerializeField] private float shellFragmentSizeMultiplier = 0.32f;
 
-    */
+    private readonly List<GameObject> activeDamageEffectObjects = new List<GameObject>();
+
+    
     [SerializeField] private float respawnDelay = 0.6f;
 
     private void Awake()
@@ -137,6 +266,8 @@ public class HealthNew : MonoBehaviour
             fadeGroup.blocksRaycasts = false;
         }
 
+        CacheShellImageDefaults();
+
         maxHP = Mathf.Max(1f, maxHP);
         currentHP = Mathf.Clamp(currentHP, 0f, maxHP);
 
@@ -152,7 +283,15 @@ public class HealthNew : MonoBehaviour
         breakOneSectionAtPercent = Mathf.Clamp(breakOneSectionAtPercent, crackAtDamagePercent, 100f);
         breakTwoSectionsAtPercent = Mathf.Clamp(breakTwoSectionsAtPercent, breakOneSectionAtPercent, 100f);
 
-        //UpdateShellUI();
+        // Keep the five Shell UI phase thresholds in ascending order.
+        shellPhase2AtDamagePercent = Mathf.Clamp(shellPhase2AtDamagePercent, 0f, 100f);
+        shellPhase3AtDamagePercent = Mathf.Clamp(shellPhase3AtDamagePercent, shellPhase2AtDamagePercent, 100f);
+        shellPhase4AtDamagePercent = Mathf.Clamp(shellPhase4AtDamagePercent, shellPhase3AtDamagePercent, 100f);
+        shellPhase5AtDamagePercent = Mathf.Clamp(shellPhase5AtDamagePercent, shellPhase4AtDamagePercent, 100f);
+
+        UpdateSpriteResolverByHP();
+
+        UpdateShellUI();
 
         if (currentHP <= 0f)
         {
@@ -175,6 +314,7 @@ public class HealthNew : MonoBehaviour
 
         UpdateIllness();
         UpdateIllness();
+        UpdateShellPhase5Effect();
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
@@ -425,6 +565,8 @@ public class HealthNew : MonoBehaviour
         }
 
         currentHP = Mathf.Clamp(currentHP - damage, 0f, maxHP);
+        TriggerShellDamageEffect();
+        UpdateSpriteResolverByHP();
 
         if (playSound)
         {
@@ -437,9 +579,13 @@ public class HealthNew : MonoBehaviour
             DamageVignette.Flash();
         }
 
-        //UpdateShellUI();
+        UpdateShellUI();
 
-        //Debug.Log($"HP: {currentHP:F1} / {maxHP:F1}");
+        // Spawn the floating bubble and Shell HP fragments for every actual hit.
+        SpawnBubbleDamageParticle();
+        SpawnShellBreakEffect();
+
+        Debug.Log($"HP: {currentHP:F1} / {maxHP:F1}");
 
         if (currentHP <= 0f)
         {
@@ -455,8 +601,488 @@ public class HealthNew : MonoBehaviour
         }
 
         currentHP = Mathf.Clamp(currentHP + amount, 0f, maxHP);
+        UpdateSpriteResolverByHP();
 
-        //UpdateShellUI();
+        UpdateShellUI();
+    }
+
+    private void UpdateShellUI()
+    {
+        if (shellImage == null)
+            return;
+
+        // Convert current HP into percentage of damage taken.
+        float damagePercent = maxHP > 0f
+            ? (1f - currentHP / maxHP) * 100f
+            : 100f;
+
+        // Five phases: UI_Shell, UI_Shell_0, UI_Shell_1, UI_Shell_2, UI_Shell_3.
+        Sprite targetSprite;
+
+        if (damagePercent >= shellPhase5AtDamagePercent)
+            targetSprite = brokenShellFinal;
+        else if (damagePercent >= shellPhase4AtDamagePercent)
+            targetSprite = brokenShell1;
+        else if (damagePercent >= shellPhase3AtDamagePercent)
+            targetSprite = brokenShell2;
+        else if (damagePercent >= shellPhase2AtDamagePercent)
+            targetSprite = crackedShell;
+        else
+            targetSprite = fullShell;
+
+        // If the selected Sprite has not been assigned, keep the current UI Sprite.
+        if (targetSprite != null && shellImage.sprite != targetSprite)
+            shellImage.sprite = targetSprite;
+
+        // Shake and blink the Shell UI only while it is in Phase 5.
+        SetShellPhase5Effect(damagePercent >= shellPhase5AtDamagePercent);
+    }
+
+    private void CacheShellImageDefaults()
+    {
+        if (shellImage == null)
+            return;
+
+        shellImageRect = shellImage.rectTransform;
+        shellImageOriginalPosition = shellImageRect.anchoredPosition;
+        shellImageOriginalColor = shellImage.color;
+    }
+
+    private void SetShellPhase5Effect(bool active)
+    {
+        if (shellPhase5EffectActive == active)
+            return;
+
+        shellPhase5EffectActive = active;
+
+        if (!active)
+            RestoreShellImageDefaults();
+    }
+
+    private void TriggerShellDamageEffect()
+    {
+        if (shellImage == null)
+            return;
+
+        if (damageHitShakeEnabled)
+            damageHitShakeTimer = Mathf.Max(0f, damageHitShakeDuration);
+
+        if (damageRedFlashEnabled)
+            damageRedFlashTimer = Mathf.Max(0f, damageRedFlashDuration);
+    }
+
+    private void UpdateShellPhase5Effect()
+    {
+        if (shellImage == null)
+            return;
+
+        float deltaTime = Time.unscaledDeltaTime;
+        float time = Time.unscaledTime;
+
+        // Damage effects count down independently from the Phase 5 critical effect.
+        damageHitShakeTimer = Mathf.Max(0f, damageHitShakeTimer - deltaTime);
+        damageRedFlashTimer = Mathf.Max(0f, damageRedFlashTimer - deltaTime);
+
+        bool damageShakeActive = damageHitShakeEnabled && damageHitShakeTimer > 0f;
+        bool damageFlashActive = damageRedFlashEnabled && damageRedFlashTimer > 0f;
+
+        if (!shellPhase5EffectActive && !damageShakeActive && !damageFlashActive)
+        {
+            RestoreShellImageDefaults();
+            return;
+        }
+
+        // Combine Phase 5 vibration and the short hit reaction without fighting
+        // over the same RectTransform position.
+        Vector2 totalOffset = Vector2.zero;
+
+        if (shellPhase5EffectActive && phase5ShakeEnabled)
+        {
+            float shakeTime = time * Mathf.Max(0f, phase5ShakeSpeed);
+            totalOffset += new Vector2(
+                Mathf.Sin(shakeTime * 1.7f) * phase5ShakeAmount,
+                Mathf.Cos(shakeTime * 2.3f) * phase5ShakeAmount * 0.7f
+            );
+        }
+
+        if (damageShakeActive)
+        {
+            float shakeProgress = damageHitShakeDuration > 0f
+                ? Mathf.Clamp01(damageHitShakeTimer / damageHitShakeDuration)
+                : 0f;
+            float hitShakeTime = time * Mathf.Max(0f, damageHitShakeSpeed);
+
+            // Fast, slightly irregular shake that fades out over the hit duration.
+            totalOffset += new Vector2(
+                Mathf.Sin(hitShakeTime * 1.9f) * damageHitShakeAmount * shakeProgress,
+                Mathf.Cos(hitShakeTime * 2.7f) * damageHitShakeAmount * 0.65f * shakeProgress
+            );
+        }
+
+        if (shellImageRect != null)
+            shellImageRect.anchoredPosition = shellImageOriginalPosition + totalOffset;
+
+        // Keep Phase 5 blinking while mixing in the temporary red damage tint.
+        float alphaMultiplier = 1f;
+        if (shellPhase5EffectActive && phase5BlinkEnabled)
+        {
+            float blink = Mathf.PingPong(time * Mathf.Max(0f, phase5BlinkSpeed), 1f);
+            alphaMultiplier = Mathf.Lerp(phase5MinAlpha, 1f, blink);
+        }
+
+        UnityEngine.Color finalColor = shellImageOriginalColor;
+
+        if (damageFlashActive)
+        {
+            float flashProgress = damageRedFlashDuration > 0f
+                ? Mathf.Clamp01(damageRedFlashTimer / damageRedFlashDuration)
+                : 0f;
+            float redStrength = damageRedFlashStrength * flashProgress;
+            finalColor = UnityEngine.Color.Lerp(
+                shellImageOriginalColor,
+                damageRedFlashColor,
+                redStrength
+            );
+        }
+
+        finalColor.a = shellImageOriginalColor.a * alphaMultiplier;
+        shellImage.color = finalColor;
+    }
+
+    private void RestoreShellImageDefaults()
+    {
+        if (shellImageRect != null)
+            shellImageRect.anchoredPosition = shellImageOriginalPosition;
+
+        if (shellImage != null)
+            shellImage.color = shellImageOriginalColor;
+    }
+
+    private void OnDisable()
+    {
+        shellPhase5EffectActive = false;
+        damageHitShakeTimer = 0f;
+        damageRedFlashTimer = 0f;
+        RestoreShellImageDefaults();
+
+        for (int i = activeDamageEffectObjects.Count - 1; i >= 0; i--)
+        {
+            if (activeDamageEffectObjects[i] != null)
+                Destroy(activeDamageEffectObjects[i]);
+        }
+        activeDamageEffectObjects.Clear();
+    }
+
+    private void UpdateSpriteResolverByHP()
+    {
+        float damagePercent = maxHP > 0f
+            ? (1f - currentHP / maxHP) * 100f
+            : 100f;
+
+        int newStage = 0;
+
+        if (damagePercent >= crackAtDamagePercent)
+            newStage = 1;
+
+        if (damagePercent >= breakOneSectionAtPercent)
+            newStage = 2;
+
+        if (damagePercent >= breakTwoSectionsAtPercent)
+            newStage = 3;
+
+        if (newStage == currentSpriteStage)
+            return;
+
+        currentSpriteStage = newStage;
+
+        ApplySpriteResolverLabel(shellSpriteResolver, shellResolverLabels, newStage);
+        ApplySpriteResolverLabel(faceSpriteResolver, faceResolverLabels, newStage);
+    }
+
+    private void ApplySpriteResolverLabel(
+        SpriteResolver resolver,
+        string[] labels,
+        int stage)
+    {
+        if (resolver == null || labels == null || stage < 0 || stage >= labels.Length)
+            return;
+
+        string label = labels[stage];
+
+        // เว้น Label ว่างไว้ได้ หากยังไม่ต้องการเปลี่ยน Sprite ใน Stage นั้น
+        if (string.IsNullOrWhiteSpace(label))
+            return;
+
+        string category = resolver.GetCategory();
+
+        if (string.IsNullOrWhiteSpace(category))
+            return;
+
+        // เปลี่ยนเฉพาะ Label โดยใช้ Category เดิมของ Sprite Resolver
+        resolver.SetCategoryAndLabel(category, label);
+    }
+
+    private void SpawnBubbleDamageParticle()
+    {
+        // Bubble uses only the Sprites assigned in the Inspector array.
+        // Empty or null entries are ignored; no external prefab is instantiated.
+        if (shellImage == null || bubbleSprites == null || bubbleSprites.Length == 0)
+            return;
+
+        RectTransform shellRect = shellImage.rectTransform;
+        RectTransform parentRect = shellRect.parent as RectTransform;
+        if (parentRect == null)
+            return;
+
+        int validSpriteCount = 0;
+        for (int i = 0; i < bubbleSprites.Length; i++)
+        {
+            if (bubbleSprites[i] != null)
+                validSpriteCount++;
+        }
+
+        if (validSpriteCount == 0)
+            return;
+
+        Vector2 centerAnchor = (shellRect.anchorMin + shellRect.anchorMax) * 0.5f;
+        Vector2 centerOffset = new Vector2(
+            (0.5f - shellRect.pivot.x) * shellRect.rect.width,
+            (0.5f - shellRect.pivot.y) * shellRect.rect.height
+        );
+        Vector2 shellCenter = shellRect.anchoredPosition + centerOffset;
+
+        for (int i = 0; i < Mathf.Max(0, bubbleSpawnCount); i++)
+        {
+            Sprite bubbleSprite = GetRandomAssignedBubbleSprite(validSpriteCount);
+            if (bubbleSprite == null)
+                continue;
+
+            GameObject bubbleObject = new GameObject(
+                "DamageBubble",
+                typeof(RectTransform),
+                typeof(CanvasRenderer),
+                typeof(Image)
+            );
+
+            bubbleObject.transform.SetParent(parentRect, false);
+            bubbleObject.transform.SetAsLastSibling();
+
+            RectTransform bubbleRect = bubbleObject.GetComponent<RectTransform>();
+            Image bubbleImage = bubbleObject.GetComponent<Image>();
+
+            bubbleRect.anchorMin = centerAnchor;
+            bubbleRect.anchorMax = centerAnchor;
+            bubbleRect.pivot = new Vector2(0.5f, 0.5f);
+            bubbleRect.localScale = Vector3.one;
+
+            float baseSize = Mathf.Max(
+                8f,
+                Mathf.Min(shellRect.rect.width, shellRect.rect.height) * bubbleSizeMultiplier
+            );
+            float spriteAspect = bubbleSprite.rect.width / Mathf.Max(1f, bubbleSprite.rect.height);
+            float bubbleWidth = baseSize;
+            float bubbleHeight = bubbleWidth / Mathf.Max(0.01f, spriteAspect);
+            if (bubbleHeight > baseSize)
+            {
+                bubbleHeight = baseSize;
+                bubbleWidth = bubbleHeight * spriteAspect;
+            }
+
+            bubbleRect.sizeDelta = new Vector2(bubbleWidth, bubbleHeight);
+            bubbleRect.anchoredPosition = shellCenter + Random.insideUnitCircle * bubbleSpawnSpread;
+            bubbleRect.localRotation = Quaternion.Euler(0f, 0f, Random.Range(-20f, 20f));
+
+            bubbleImage.sprite = bubbleSprite;
+            bubbleImage.preserveAspect = true;
+            bubbleImage.raycastTarget = false;
+            bubbleImage.color = UnityEngine.Color.white;
+
+            Vector2 startPosition = bubbleRect.anchoredPosition;
+            Vector2 endPosition = startPosition
+                + Vector2.up * bubbleFloatDistance
+                + Vector2.right * Random.Range(-bubbleFloatSideDrift, bubbleFloatSideDrift);
+
+            activeDamageEffectObjects.Add(bubbleObject);
+            StartCoroutine(AnimateBubbleFloat(
+                bubbleObject,
+                bubbleRect,
+                bubbleImage,
+                startPosition,
+                endPosition,
+                Mathf.Max(0.01f, bubbleFloatDuration)
+            ));
+        }
+    }
+
+    private Sprite GetRandomAssignedBubbleSprite(int validSpriteCount)
+    {
+        if (bubbleSprites == null || validSpriteCount <= 0)
+            return null;
+
+        int selectedValidIndex = Random.Range(0, validSpriteCount);
+        for (int i = 0; i < bubbleSprites.Length; i++)
+        {
+            if (bubbleSprites[i] == null)
+                continue;
+
+            if (selectedValidIndex == 0)
+                return bubbleSprites[i];
+
+            selectedValidIndex--;
+        }
+
+        return null;
+    }
+
+    private IEnumerator AnimateBubbleFloat(
+        GameObject bubbleObject,
+        RectTransform bubbleRect,
+        Image bubbleImage,
+        Vector2 startPosition,
+        Vector2 endPosition,
+        float duration)
+    {
+        float elapsed = 0f;
+        UnityEngine.Color startColor = bubbleImage.color;
+
+        while (elapsed < duration && bubbleObject != null && bubbleRect != null && bubbleImage != null)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float progress = Mathf.Clamp01(elapsed / duration);
+            float easedProgress = 1f - Mathf.Pow(1f - progress, 2f);
+
+            bubbleRect.anchoredPosition = Vector2.LerpUnclamped(
+                startPosition,
+                endPosition,
+                easedProgress
+            );
+
+            UnityEngine.Color color = startColor;
+            color.a = 1f - progress;
+            bubbleImage.color = color;
+            yield return null;
+        }
+
+        if (bubbleObject != null)
+        {
+            activeDamageEffectObjects.Remove(bubbleObject);
+            Destroy(bubbleObject);
+        }
+    }
+
+    private void SpawnShellBreakEffect()
+    {
+        if (shellImage == null || shellFragmentSprites == null || shellFragmentSprites.Length == 0)
+            return;
+
+        RectTransform shellRect = shellImage.rectTransform;
+        RectTransform parentRect = shellRect.parent as RectTransform;
+        if (parentRect == null)
+            return;
+
+        int fragmentCount = Mathf.Max(1, shellBreakShardCount);
+        Vector2 centerAnchor = (shellRect.anchorMin + shellRect.anchorMax) * 0.5f;
+        Vector2 centerOffset = new Vector2(
+            (0.5f - shellRect.pivot.x) * shellRect.rect.width,
+            (0.5f - shellRect.pivot.y) * shellRect.rect.height
+        );
+        Vector2 spawnPosition = shellRect.anchoredPosition + centerOffset;
+        float maxWidth = Mathf.Max(8f, shellRect.rect.width * shellFragmentSizeMultiplier);
+        float maxHeight = Mathf.Max(8f, shellRect.rect.height * shellFragmentSizeMultiplier);
+        float angleStep = 360f / fragmentCount;
+        float startAngle = Random.Range(0f, 360f);
+
+        for (int i = 0; i < fragmentCount; i++)
+        {
+            Sprite fragmentSprite = shellFragmentSprites[Random.Range(0, shellFragmentSprites.Length)];
+            if (fragmentSprite == null)
+                continue;
+
+            GameObject fragmentObject = new GameObject(
+                "ShellHP_Fragment",
+                typeof(RectTransform),
+                typeof(CanvasRenderer),
+                typeof(Image)
+            );
+
+            fragmentObject.transform.SetParent(parentRect, false);
+            fragmentObject.transform.SetAsLastSibling();
+
+            RectTransform fragmentRect = fragmentObject.GetComponent<RectTransform>();
+            Image fragmentImage = fragmentObject.GetComponent<Image>();
+
+            // Use a single center anchor so fragments keep the Shell HP's screen position.
+            fragmentRect.anchorMin = centerAnchor;
+            fragmentRect.anchorMax = centerAnchor;
+            fragmentRect.pivot = new Vector2(0.5f, 0.5f);
+            fragmentRect.anchoredPosition = spawnPosition;
+            fragmentRect.localScale = Vector3.one;
+
+            float spriteAspect = fragmentSprite.rect.width / Mathf.Max(1f, fragmentSprite.rect.height);
+            float fragmentWidth = maxWidth;
+            float fragmentHeight = fragmentWidth / Mathf.Max(0.01f, spriteAspect);
+            if (fragmentHeight > maxHeight)
+            {
+                fragmentHeight = maxHeight;
+                fragmentWidth = fragmentHeight * spriteAspect;
+            }
+            fragmentRect.sizeDelta = new Vector2(fragmentWidth, fragmentHeight);
+            fragmentRect.localRotation = Quaternion.Euler(0f, 0f, Random.Range(-35f, 35f));
+
+            fragmentImage.sprite = fragmentSprite;
+            fragmentImage.preserveAspect = true;
+            fragmentImage.raycastTarget = false;
+            fragmentImage.color = UnityEngine.Color.white;
+
+            float angle = (startAngle + angleStep * i + Random.Range(-16f, 16f)) * Mathf.Deg2Rad;
+            Vector2 direction = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
+            Vector2 velocity = direction * shellBreakShardSpeed * Random.Range(0.75f, 1.25f);
+            float rotationSpeed = Random.Range(-540f, 540f);
+
+            activeDamageEffectObjects.Add(fragmentObject);
+            StartCoroutine(AnimateShellFragment(
+                fragmentRect,
+                fragmentImage,
+                fragmentObject,
+                velocity,
+                rotationSpeed
+            ));
+        }
+    }
+
+    private IEnumerator AnimateShellFragment(
+        RectTransform fragmentRect,
+        Image fragmentImage,
+        GameObject fragmentObject,
+        Vector2 velocity,
+        float rotationSpeed)
+    {
+        float elapsed = 0f;
+        float duration = Mathf.Max(0.05f, shellBreakEffectDuration);
+        UnityEngine.Color startColor = fragmentImage.color;
+
+        while (elapsed < duration && fragmentRect != null && fragmentImage != null)
+        {
+            float deltaTime = Time.unscaledDeltaTime;
+            elapsed += deltaTime;
+            float progress = Mathf.Clamp01(elapsed / duration);
+
+            velocity += Vector2.down * shellBreakGravity * deltaTime;
+            fragmentRect.anchoredPosition += velocity * deltaTime;
+            fragmentRect.Rotate(0f, 0f, rotationSpeed * deltaTime);
+
+            UnityEngine.Color color = startColor;
+            color.a = 1f - progress;
+            fragmentImage.color = color;
+
+            yield return null;
+        }
+
+        if (fragmentObject != null)
+        {
+            activeDamageEffectObjects.Remove(fragmentObject);
+            Destroy(fragmentObject);
+        }
     }
 
     public void Die()
@@ -468,8 +1094,8 @@ public class HealthNew : MonoBehaviour
 
         isDead = true;
         currentHP = 0f;
+        UpdateShellUI();
         GameAudio.Instance?.PlayDeath();
-        //UpdateShellUI();
 
         if (rb != null)
         {
@@ -544,6 +1170,9 @@ public class HealthNew : MonoBehaviour
         currentHP = maxHP;
         isDead = false;
         illnessTimer = 0f;
+        damageHitShakeTimer = 0f;
+        damageRedFlashTimer = 0f;
+        UpdateSpriteResolverByHP();
 
         if (rb != null)
         {
@@ -557,7 +1186,7 @@ public class HealthNew : MonoBehaviour
             playerController.ResetAfterRespawn();
         }
 
-        //UpdateShellUI();
+        UpdateShellUI();
     }
 
 
@@ -565,160 +1194,6 @@ public class HealthNew : MonoBehaviour
     {
         ResetAfterRespawn();
     }
-
-    /*
-    private void SpawnShellBreakEffect(int stage)
-    {
-        RectTransform shellRect = shellImage.rectTransform;
-        RectTransform parent = shellRect.parent as RectTransform;
-
-        if (parent == null)
-        {
-            return;
-        }
-
-        Sprite shardSprite = GetShellShardSprite();
-
-        UnityEngine.Color shardColor = stage >= 3
-            ? new UnityEngine.Color(0.75f, 0.32f, 0.24f, 1f)
-            : new UnityEngine.Color(0.45f, 0.72f, 0.38f, 1f);
-
-        for (int i = 0; i < shellBreakShardCount; i++)
-        {
-            GameObject shard = new GameObject(
-                "ShellBreakShard",
-                typeof(RectTransform),
-                typeof(CanvasRenderer),
-                typeof(Image)
-            );
-
-            shard.transform.SetParent(parent, false);
-            shard.transform.SetAsLastSibling();
-
-            RectTransform shardRect = shard.GetComponent<RectTransform>();
-            Image shardImage = shard.GetComponent<Image>();
-
-            shardRect.anchorMin = shellRect.anchorMin;
-            shardRect.anchorMax = shellRect.anchorMax;
-            shardRect.pivot = shellRect.pivot;
-
-            shardRect.anchoredPosition =
-                shellRect.anchoredPosition + Random.insideUnitCircle * 12f;
-
-            shardRect.sizeDelta = new Vector2(
-                Random.Range(4f, 9f),
-                Random.Range(7f, 15f)
-            );
-
-            shardRect.localRotation =
-                Quaternion.Euler(0f, 0f, Random.Range(0f, 360f));
-
-            shardRect.localScale = Vector3.one;
-
-            shardImage.sprite = shardSprite;
-            shardImage.raycastTarget = false;
-
-            // สลับเศษสีทองกับสีของกระดอง
-            shardImage.color = Random.value > 0.5f
-                ? new UnityEngine.Color(0.82f, 0.66f, 0.38f, 1f)
-                : shardColor;
-
-            Vector2 direction = Random.insideUnitCircle.normalized;
-
-            if (direction.sqrMagnitude < 0.01f)
-            {
-                direction = Vector2.up;
-            }
-
-            Vector2 velocity = direction * Random.Range(
-                shellBreakShardSpeed * 0.6f,
-                shellBreakShardSpeed * 1.3f
-            );
-
-            float rotationSpeed = Random.Range(-500f, 500f);
-
-            StartCoroutine(AnimateShellShard(
-                shardRect,
-                shardImage,
-                velocity,
-                rotationSpeed
-            ));
-        }
-    }
-    
-
-    private Sprite GetShellShardSprite()
-    {
-        if (shellShardSprite != null)
-        {
-            return shellShardSprite;
-        }
-
-        Texture2D texture = new Texture2D(
-            1,
-            1,
-            TextureFormat.RGBA32,
-            false
-        );
-
-        texture.name = "ShellShardTexture";
-        texture.SetPixel(0, 0, UnityEngine.Color.white);
-        texture.Apply();
-
-        shellShardSprite = Sprite.Create(
-            texture,
-            new Rect(0, 0, 1, 1),
-            new Vector2(0.5f, 0.5f),
-            100f
-        );
-
-        shellShardSprite.name = "ShellShardSprite";
-
-        return shellShardSprite;
-    }
-
-
-    private IEnumerator AnimateShellShard(
-        RectTransform shardRect,
-        Image shardImage,
-        Vector2 velocity,
-        float rotationSpeed)
-    {
-        float elapsed = 0f;
-
-        float duration = Mathf.Max(0.05f, shellBreakEffectDuration);
-
-        UnityEngine.Color startColor = shardImage.color;
-
-        while (elapsed < duration && shardRect != null && shardImage != null)
-        {
-            float deltaTime = Time.unscaledDeltaTime;
-
-            elapsed += deltaTime;
-
-            float progress = Mathf.Clamp01(elapsed / duration);
-
-            // กระจายออกแล้วค่อย ๆ ตกลง
-            velocity += Vector2.down * 260f * deltaTime;
-
-            shardRect.anchoredPosition += velocity * deltaTime;
-
-            shardRect.Rotate(0f, 0f, rotationSpeed * deltaTime);
-
-            UnityEngine.Color color = startColor;
-            color.a = 1f - progress;
-
-            shardImage.color = color;
-
-            yield return null;
-        }
-
-        if (shardRect != null)
-        {
-            Destroy(shardRect.gameObject);
-        }
-    }
-    */
 
     //private List<ContactPoint2D> contacts = new List<ContactPoint2D>();
     //private void OnDrawGizmos()
