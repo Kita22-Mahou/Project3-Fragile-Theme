@@ -492329,7 +492329,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1994750403940972139, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -12.8
+      value: 50.7
       objectReference: {fileID: 0}
     - target: {fileID: 1994750403940972139, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
       propertyPath: m_LocalPosition.y
@@ -492390,6 +492390,10 @@ PrefabInstance:
     - target: {fileID: 4775083938478933952, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
       propertyPath: predictTimeMax
       value: 0.1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4775083938478933952, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
+      propertyPath: isBounceSuccessed
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4775083938478933952, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
       propertyPath: originalTimeScale
