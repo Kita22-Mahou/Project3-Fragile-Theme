@@ -103,7 +103,12 @@ public class PlayerController : MonoBehaviour
         jumpTrajectory = GetComponent<JumpTrajectory>();
         healthNew = GetComponent<HealthNew>();
 
-        mainCamera = Camera.main;
+        GameObject cameraObject = GameObject.FindGameObjectWithTag("Camera");
+
+        if (cameraObject != null)
+        {
+            mainCamera = cameraObject.GetComponent<Camera>();
+        }
 
         AirAimingMaxChargeTime = maxChargeTime / 3f;
         NormalMaxChargeTime = maxChargeTime;
@@ -208,7 +213,6 @@ public class PlayerController : MonoBehaviour
         //เล็งเมื่อกำลังกด mouse และครบเงื่อนไข
         if (isAiming || isAirAiming || isTempAiming)
         {
-
             Aiming();
         }
 
