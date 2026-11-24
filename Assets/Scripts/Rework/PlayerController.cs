@@ -269,17 +269,17 @@ public class PlayerController : MonoBehaviour
         if ((bounceTarget != null || isPredict) && isTakeDamage)
         {
             //Debug.Log("in");
-            if (!isWantSlowParry)
-                return;
-
-            isPredict = true;
+            if (isWantSlowParry)
+            {
+                isPredict = true;
+            }
         }
         else
         {
-            if (!isWantSlowParry)
-                return;
-
-            isPredict = false;
+            if (isWantSlowParry)
+            {
+                isPredict = false;
+            }
         }
 
         // ทำ slow motion ตอน AirAiming และ Predict เท่านั้น
@@ -358,6 +358,15 @@ public class PlayerController : MonoBehaviour
         jumpState = JumpState.OnGround;
 
         canTempAim = false;
+
+        if (isAiming && !groundDetected)
+        {
+            isAiming = false;
+            jumpChargeTime = 0f;
+            Time.timeScale = 1f;
+            maxChargeTime = NormalMaxChargeTime;
+            HideJumpTrajectory();
+        }
 
         if (isAirAiming)
         {

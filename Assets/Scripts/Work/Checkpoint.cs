@@ -50,11 +50,14 @@ public class Checkpoint : MonoBehaviour
     {
         // ตรวจสอบว่าผู้เล่นมี MouseController หรือไม่
         PlayerController player = other.GetComponentInParent<PlayerController>();
+        HealthNew playerHealth = other.GetComponentInParent<HealthNew>();
 
-        if (player == null)
+        if (player == null || playerHealth == null)
         {
             return;
         }
+
+        playerHealth.currentHP = playerHealth.maxHP;
 
         bool isNewCheckpoint = activeCheckpoint != this;
 
