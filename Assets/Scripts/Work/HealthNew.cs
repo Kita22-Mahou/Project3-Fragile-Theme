@@ -41,6 +41,12 @@ public class HealthNew : MonoBehaviour
     // ดาเมจที่ต่ำกว่าค่านี้ถือเป็นแค่การกระทบเบา ๆ จะไม่หัก HP
     [SerializeField] private float minCollisionDamage = 1f;
 
+    [SerializeField] private Transform fragmentSpawnPoint;
+
+    [SerializeField] private GameObject lowHurt;
+    [SerializeField] private GameObject midHurt;
+    [SerializeField] private GameObject highHurt;
+
     [Header("Wall Collision")]
 
     [SerializeField] private float minVerticalSpeedForWallDamage = 1f;
@@ -579,11 +585,20 @@ public class HealthNew : MonoBehaviour
             DamageVignette.Flash();
         }
 
+        if (damage <= 5)
         {
-
+            Instantiate(lowHurt, fragmentSpawnPoint);
+        }
+        else if (damage > 5 && damage <= 10)
+        {
+            Instantiate(midHurt, fragmentSpawnPoint);
+        }
+        else if (damage > 10)
+        {
+            Instantiate(highHurt, fragmentSpawnPoint);
         }
 
-        UpdateShellUI();
+            UpdateShellUI();
 
         // Spawn the floating bubble and Shell HP fragments for every actual hit.
         SpawnBubbleDamageParticle();
