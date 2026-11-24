@@ -327316,7 +327316,7 @@ Transform:
   m_GameObject: {fileID: 1185718296}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -10.1, y: 3.9, z: -10}
+  m_LocalPosition: {x: -12.72, y: 3.24, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -496945,6 +496945,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: CheakPoint (6)
       objectReference: {fileID: 0}
+    - target: {fileID: 8662906939397642633, guid: 61ff46f535d567641aaca067a74f42c1, type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -505252,7 +505256,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 72f8fad4ff5820a43b6ec3dcbc4263f0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FinishLine
-  winPanel: {fileID: 162799677}
+  endingSceneName: Story Ending
+  delayBeforeLoad: 0
 --- !u!1 &2082584127
 GameObject:
   m_ObjectHideFlags: 0
@@ -506422,11 +506427,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1994750403940972139, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -10.1
+      value: -12.72
       objectReference: {fileID: 0}
     - target: {fileID: 1994750403940972139, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 3.9
+      value: 3.24
       objectReference: {fileID: 0}
     - target: {fileID: 1994750403940972139, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
       propertyPath: m_LocalPosition.z
@@ -506470,6 +506475,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3626048669182220705, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
       propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3927955348787867388, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
+      propertyPath: m_IsTrigger
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4445524758715972769, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
