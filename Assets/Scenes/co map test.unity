@@ -505379,7 +505379,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 72f8fad4ff5820a43b6ec3dcbc4263f0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FinishLine
-  winPanel: {fileID: 162799677}
+  endingSceneName: Story Ending
+  delayBeforeLoad: 0
 --- !u!1 &2082584127
 GameObject:
   m_ObjectHideFlags: 0
@@ -506549,11 +506550,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1994750403940972139, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 21.900002
+      value: -12.100006
       objectReference: {fileID: 0}
     - target: {fileID: 1994750403940972139, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 5.899994
+      value: 3.899994
       objectReference: {fileID: 0}
     - target: {fileID: 1994750403940972139, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
       propertyPath: m_LocalPosition.z

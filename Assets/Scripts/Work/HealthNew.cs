@@ -579,6 +579,10 @@ public class HealthNew : MonoBehaviour
             DamageVignette.Flash();
         }
 
+        {
+
+        }
+
         UpdateShellUI();
 
         // Spawn the floating bubble and Shell HP fragments for every actual hit.
