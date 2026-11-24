@@ -436807,6 +436807,17 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1306542447}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: -192.268}
+--- !u!114 &1242470523 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 433824552064493563, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
+  m_PrefabInstance: {fileID: 4554249235484595177}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ed8b1ae4e4e52b34ea557c1c11e076fc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.2D.Animation.Runtime::UnityEngine.U2D.Animation.SpriteResolver
 --- !u!1001 &1245136364
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -443592,6 +443603,17 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 8806305199917051389, guid: 95194a375ae650141abed788246d717d, type: 3}
   m_PrefabInstance: {fileID: 1570389043}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1573355226 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8255307099675317282, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
+  m_PrefabInstance: {fileID: 4554249235484595177}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ed8b1ae4e4e52b34ea557c1c11e076fc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.2D.Animation.Runtime::UnityEngine.U2D.Animation.SpriteResolver
 --- !u!4 &1589207238 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2490426554086163122, guid: 61ff46f535d567641aaca067a74f42c1, type: 3}
@@ -617060,15 +617082,39 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4775083938478933952, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
       propertyPath: inShellTime
-      value: 0.05
+      value: 0.08
       objectReference: {fileID: 0}
     - target: {fileID: 4775083938478933952, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
       propertyPath: predictTime
       value: 0.02
       objectReference: {fileID: 0}
     - target: {fileID: 4775083938478933952, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
+      propertyPath: predictTimeMax
+      value: 0.07
+      objectReference: {fileID: 0}
+    - target: {fileID: 4775083938478933952, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
       propertyPath: isWantSlowParry
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4775083938478933952, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
+      propertyPath: inShellBubbleSprite
+      value: 
+      objectReference: {fileID: 21300000, guid: 7c45a2f0e4966004ebf6f69176ebdb64, type: 3}
+    - target: {fileID: 4775083938478933952, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
+      propertyPath: parryWarningIconSprite
+      value: 
+      objectReference: {fileID: 21300000, guid: dded85224dbd67f418244395080892d7, type: 3}
+    - target: {fileID: 4775083938478933952, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
+      propertyPath: parryWarningIconOffset.x
+      value: 1.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4775083938478933952, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
+      propertyPath: parryWarningIconOffset.y
+      value: 2.3
+      objectReference: {fileID: 0}
+    - target: {fileID: 4775083938478933952, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
+      propertyPath: parryBubbleDisplayDuration
+      value: 0.3
       objectReference: {fileID: 0}
     - target: {fileID: 5611050714896671065, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
       propertyPath: shellImage
@@ -617085,6 +617131,54 @@ PrefabInstance:
     - target: {fileID: 5611050714896671065, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
       propertyPath: safeImpactSpeed
       value: 34
+      objectReference: {fileID: 0}
+    - target: {fileID: 5611050714896671065, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
+      propertyPath: brokenShellFinal
+      value: 
+      objectReference: {fileID: 21300000, guid: 3592b7f919fa0b24b858dcb84d7ef522, type: 3}
+    - target: {fileID: 5611050714896671065, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
+      propertyPath: faceSpriteResolver
+      value: 
+      objectReference: {fileID: 1573355226}
+    - target: {fileID: 5611050714896671065, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
+      propertyPath: shellSpriteResolver
+      value: 
+      objectReference: {fileID: 1242470523}
+    - target: {fileID: 5611050714896671065, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
+      propertyPath: crackAtDamagePercent
+      value: 30
+      objectReference: {fileID: 0}
+    - target: {fileID: 5611050714896671065, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
+      propertyPath: breakOneSectionAtPercent
+      value: 70
+      objectReference: {fileID: 0}
+    - target: {fileID: 5611050714896671065, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
+      propertyPath: breakTwoSectionsAtPercent
+      value: 90
+      objectReference: {fileID: 0}
+    - target: {fileID: 5611050714896671065, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
+      propertyPath: faceResolverLabels.Array.size
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 5611050714896671065, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
+      propertyPath: shellResolverLabels.Array.size
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 5611050714896671065, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
+      propertyPath: 'faceResolverLabels.Array.data[1]'
+      value: Face 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5611050714896671065, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
+      propertyPath: 'faceResolverLabels.Array.data[2]'
+      value: Face 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 5611050714896671065, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
+      propertyPath: 'shellResolverLabels.Array.data[1]'
+      value: Shell 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5611050714896671065, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
+      propertyPath: 'shellResolverLabels.Array.data[2]'
+      value: Shell 2
       objectReference: {fileID: 0}
     - target: {fileID: 7431792650135662471, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
       propertyPath: m_Name
