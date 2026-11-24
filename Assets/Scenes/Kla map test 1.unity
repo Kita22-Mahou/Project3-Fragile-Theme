@@ -303992,6 +303992,63 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1306542447}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1001 &983589351
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 3623510741849375732, guid: 4e18ddf7644c91e4b95fc03109ad5dfe, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 21.758509
+      objectReference: {fileID: 0}
+    - target: {fileID: 3623510741849375732, guid: 4e18ddf7644c91e4b95fc03109ad5dfe, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 6.0054293
+      objectReference: {fileID: 0}
+    - target: {fileID: 3623510741849375732, guid: 4e18ddf7644c91e4b95fc03109ad5dfe, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3623510741849375732, guid: 4e18ddf7644c91e4b95fc03109ad5dfe, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3623510741849375732, guid: 4e18ddf7644c91e4b95fc03109ad5dfe, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3623510741849375732, guid: 4e18ddf7644c91e4b95fc03109ad5dfe, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3623510741849375732, guid: 4e18ddf7644c91e4b95fc03109ad5dfe, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3623510741849375732, guid: 4e18ddf7644c91e4b95fc03109ad5dfe, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3623510741849375732, guid: 4e18ddf7644c91e4b95fc03109ad5dfe, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3623510741849375732, guid: 4e18ddf7644c91e4b95fc03109ad5dfe, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7433221479827635503, guid: 4e18ddf7644c91e4b95fc03109ad5dfe, type: 3}
+      propertyPath: m_Name
+      value: Fish1
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 4e18ddf7644c91e4b95fc03109ad5dfe, type: 3}
 --- !u!1 &988111013
 GameObject:
   m_ObjectHideFlags: 0
@@ -484550,10 +484607,13 @@ MonoBehaviour:
   isAiming: 0
   isJumped: 0
   isAirAiming: 0
+  isTempAiming: 0
   isInShell: 0
+  isPredict: 0
   groundCheckPoint: {fileID: 1904830755}
   groundCheckX: 0.5
   groundCheckY: 0.3
+  groundDetected: 0
   groundLayer:
     serializedVersion: 2
     m_Bits: 64
@@ -484565,6 +484625,22 @@ MonoBehaviour:
   isJumpedFromGround: 0
   canAirJump: 1
   inShellTime: 1
+  canBounce: 0
+  canTempAim: 0
+  isWantSlowParry: 0
+  predictTimeMax: 0
+  predictTime: 0
+  predictLayer:
+    serializedVersion: 2
+    m_Bits: 0
+  bounceTarget: {fileID: 0}
+  bounceNormal: {x: 0, y: 0}
+  bouncePoint: {x: 0, y: 0}
+  isSlowMotion: 0
+  isTakeDamage: 0
+  isBounceSuccessed: 0
+  originalTimeScale: 0
+  slowTimeScale: 0
   minAimAngle: 15
   maxAimAngle: 165
   playerSprite: {fileID: 1904830753}
@@ -489762,7 +489838,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 72f8fad4ff5820a43b6ec3dcbc4263f0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FinishLine
-  winPanel: {fileID: 162799677}
+  endingSceneName: Story Ending
+  delayBeforeLoad: 0
 --- !u!4 &2090071366 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 3801668499701212970, guid: c079f2e201c255142a96f4de5797989a, type: 3}
@@ -490759,3 +490836,4 @@ SceneRoots:
   - {fileID: 370680734}
   - {fileID: 2016965722}
   - {fileID: 2110472400}
+  - {fileID: 983589351}

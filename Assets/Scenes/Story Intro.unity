@@ -746,7 +746,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::StoryBgm
   bgmClip: {fileID: 8300000, guid: 57ea46706cfc5fd4db1197be0e7e5899, type: 3}
-  volume: 0.1
+  volume: 0
   loop: 1
   playOnStart: 1
 --- !u!82 &974653830
@@ -1239,37 +1239,49 @@ MonoBehaviour:
   - show:
     - {fileID: 1994612243}
     playTextSound: 0
+    voiceOverClip: {fileID: 0}
   - show:
     - {fileID: 972324825}
     playTextSound: 1
+    voiceOverClip: {fileID: 8300000, guid: 890e77974d64aa148900758b0a5afa6c, type: 3}
   - show:
     - {fileID: 890585038}
     playTextSound: 0
+    voiceOverClip: {fileID: 0}
   - show:
     - {fileID: 2090562423}
     playTextSound: 1
+    voiceOverClip: {fileID: 8300000, guid: 2d014a625062bf1449d09abcd4f1823a, type: 3}
   - show:
     - {fileID: 774647434}
     playTextSound: 1
+    voiceOverClip: {fileID: 8300000, guid: 830b4ffcc21f3914c9ddf68c8aaf7098, type: 3}
   - show:
     - {fileID: 641030942}
     playTextSound: 0
+    voiceOverClip: {fileID: 0}
   - show:
     - {fileID: 2120672318}
     playTextSound: 1
+    voiceOverClip: {fileID: 8300000, guid: b7f4195c35ec0d64ab9f758bdff1f79c, type: 3}
   - show:
     - {fileID: 986518789}
     playTextSound: 1
+    voiceOverClip: {fileID: 8300000, guid: dd347dd93e94a4646b5382f5447aa2d5, type: 3}
   - show:
     - {fileID: 798285986}
     playTextSound: 0
+    voiceOverClip: {fileID: 0}
   - show:
     - {fileID: 1418826567}
     playTextSound: 1
+    voiceOverClip: {fileID: 8300000, guid: f12ecc87b95bff44fae00168afbd938e, type: 3}
   nextSceneAfterFinish: co map test
   sfxSource: {fileID: 0}
   textAppearClip: {fileID: 8300000, guid: c55b991fe8cf6ed4ebfb33874ff8f573, type: 3}
   sfxVolume: 0.25
+  voiceOverSource: {fileID: 0}
+  voiceOverVolume: 1
 --- !u!114 &1371839350
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1282,6 +1294,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d4e9f042585fa2645b966ab837e4dcbd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::StoryClick
+  steps: []
+  nextSceneAfterFinish: co map test
+  sfxSource: {fileID: 0}
+  textAppearClip: {fileID: 0}
+  sfxVolume: 1
+  voiceOverSource: {fileID: 0}
+  voiceOverVolume: 1
 --- !u!114 &1371839351
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1318,6 +1337,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d4e9f042585fa2645b966ab837e4dcbd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::StoryClick
+  steps: []
+  nextSceneAfterFinish: co map test
+  sfxSource: {fileID: 0}
+  textAppearClip: {fileID: 0}
+  sfxVolume: 1
+  voiceOverSource: {fileID: 0}
+  voiceOverVolume: 1
 --- !u!114 &1371839354
 MonoBehaviour:
   m_ObjectHideFlags: 0
