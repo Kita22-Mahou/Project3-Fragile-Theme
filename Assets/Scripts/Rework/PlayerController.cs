@@ -1,7 +1,8 @@
-﻿using UnityEngine;
+using UnityEngine;
 using System.Collections;
 using UnityEngine.InputSystem;
 using Unity.VisualScripting;
+using UnityEngine.Serialization;
 
 public class PlayerController : MonoBehaviour
 {
@@ -64,10 +65,28 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private Vector2 inShellBubbleOffset = Vector2.zero;
     [Tooltip("ค่าลำดับการวาดเทียบกับ Sprite ของผู้เล่น (ค่าบวก = วาดด้านหน้า)")]
     [SerializeField] private int inShellBubbleSortingOrderOffset = 1;
+    [Tooltip("ระยะเวลาที่แสดง Bubble หลังจาก Parry สำเร็จ โดยไม่ต้องรอให้ Tumi ลงพื้น")]
+    [SerializeField] private float parryBubbleDisplayDuration = 0.35f;
 
     private SpriteRenderer inShellBubbleRenderer;
-    private bool showParryBubbleUntilGrounded;
-    private bool hasLeftGroundAfterParry;
+    private Coroutine parryBubbleHideCoroutine;
+
+    [Header("Parry Warning Indicator")]
+    [Tooltip("Sprite เครื่องหมายตกใจที่แสดงก่อนถึงจังหวะชนที่คาดว่าจะทำดาเมจ เพื่อเตือนให้ผู้เล่นกด Parry")]
+    [FormerlySerializedAs("parrySuccessIconSprite")]
+    [SerializeField] private Sprite parryWarningIconSprite;
+    [Tooltip("ขนาดของเครื่องหมายตกใจ")]
+    [FormerlySerializedAs("parrySuccessIconScale")]
+    [SerializeField] private Vector2 parryWarningIconScale = new Vector2(0.6f, 0.6f);
+    [Tooltip("ตำแหน่งของเครื่องหมายตกใจเทียบกับตัว Tumi (ค่า Y บวก = อยู่เหนือหัว)")]
+    [FormerlySerializedAs("parrySuccessIconOffset")]
+    [SerializeField] private Vector2 parryWarningIconOffset = new Vector2(0f, 1f);
+    [Tooltip("ลำดับการวาดเทียบกับ Sprite ของผู้เล่น")]
+    [FormerlySerializedAs("parrySuccessIconSortingOrderOffset")]
+    [SerializeField] private int parryWarningIconSortingOrderOffset = 3;
+
+    private SpriteRenderer parryWarningIconRenderer;
+    private bool showParryBubble;
 
     [Header("Predict Impact Setting")]
     [SerializeField] private float predictTimeMax;
@@ -128,8 +147,9 @@ public class PlayerController : MonoBehaviour
         NormalMaxChargeTime = maxChargeTime;
 
         SetupInShellBubbleVisual();
+        SetupParryWarningIcon();
         Grounded();
-
+        
     }
 
     private void SetupInShellBubbleVisual()
@@ -162,6 +182,35 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    private void SetupParryWarningIcon()
+    {
+        if (parryWarningIconSprite == null)
+        {
+            return;
+        }
+
+        GameObject iconObject = new GameObject("ParryWarningIndicator");
+        iconObject.transform.SetParent(transform, false);
+        iconObject.transform.localPosition = parryWarningIconOffset;
+        iconObject.transform.localRotation = Quaternion.identity;
+        iconObject.transform.localScale = new Vector3(
+            parryWarningIconScale.x,
+            parryWarningIconScale.y,
+            1f
+        );
+
+        parryWarningIconRenderer = iconObject.AddComponent<SpriteRenderer>();
+        parryWarningIconRenderer.sprite = parryWarningIconSprite;
+        parryWarningIconRenderer.enabled = false;
+
+        if (playerSprite != null)
+        {
+            parryWarningIconRenderer.sortingLayerID = playerSprite.sortingLayerID;
+            parryWarningIconRenderer.sortingOrder =
+                playerSprite.sortingOrder + parryWarningIconSortingOrderOffset;
+        }
+    }
+
     private void SetInShellBubbleVisible(bool visible)
     {
         if (inShellBubbleRenderer != null)
@@ -170,22 +219,73 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    // เรียกจาก HealthNew เฉพาะเมื่อ Parry สำเร็จขณะอยู่ใน InShell
+    private void SetParryWarningIconVisible(bool visible)
+    {
+        if (parryWarningIconRenderer != null)
+        {
+            parryWarningIconRenderer.enabled = visible;
+        }
+    }
+
+    // แสดงเครื่องหมายตกใจเฉพาะช่วงที่ระบบคาดการณ์ว่าจะเกิดการชนที่อาจทำดาเมจ
+    private void UpdateParryWarningIndicator()
+    {
+        if (parryWarningIconRenderer == null)
+            return;
+
+        bool shouldShow =
+            !movementLocked &&
+            !isInShell &&
+            !showParryBubble &&
+            jumpState == JumpState.InAir &&
+            !isOnGround &&
+            bounceTarget != null &&
+            canBounce;
+
+        SetParryWarningIconVisible(shouldShow);
+    }
+
+    // HealthNew เรียกเมื่อตรวจพบว่า Parry สำเร็จจริงขณะอยู่ใน InShell เท่านั้น
     public void NotifyParrySuccess()
     {
         if (!isInShell)
             return;
 
-        showParryBubbleUntilGrounded = true;
-        hasLeftGroundAfterParry = !isOnGround;
+        // หากเกิด Parry ซ้ำ ให้เริ่มเวลาการแสดง Bubble ใหม่
+        if (parryBubbleHideCoroutine != null)
+        {
+            StopCoroutine(parryBubbleHideCoroutine);
+            parryBubbleHideCoroutine = null;
+        }
+
+        showParryBubble = true;
         SetInShellBubbleVisible(true);
+        SetParryWarningIconVisible(false);
+
+        parryBubbleHideCoroutine = StartCoroutine(HideParryBubbleAfterDelay());
     }
 
-    private void HideParryBubbleAfterLanding()
+    private IEnumerator HideParryBubbleAfterDelay()
     {
-        showParryBubbleUntilGrounded = false;
-        hasLeftGroundAfterParry = false;
+        // ใช้เวลาจริง เพื่อให้ Bubble หายตามเวลาที่ตั้งไว้แม้เกมกำลัง Slow Motion
+        yield return new WaitForSecondsRealtime(Mathf.Max(0.01f, parryBubbleDisplayDuration));
+
+        showParryBubble = false;
         SetInShellBubbleVisible(false);
+        parryBubbleHideCoroutine = null;
+    }
+
+    private void HideParryBubble()
+    {
+        if (parryBubbleHideCoroutine != null)
+        {
+            StopCoroutine(parryBubbleHideCoroutine);
+            parryBubbleHideCoroutine = null;
+        }
+
+        showParryBubble = false;
+        SetInShellBubbleVisible(false);
+        SetParryWarningIconVisible(false);
     }
 
     void Start()
@@ -199,6 +299,7 @@ public class PlayerController : MonoBehaviour
         // ล็อกการควบคุมระหว่างตายหรือกำลัง Respawn
         if (movementLocked)
         {
+            HideParryBubble();
             Time.timeScale = 1f;
 
             isAiming = false;
@@ -365,6 +466,7 @@ public class PlayerController : MonoBehaviour
         PredictImpact();
 
         CanBounceCheck();
+        UpdateParryWarningIndicator();
 
         ChangeAnimation();
 
@@ -405,13 +507,6 @@ public class PlayerController : MonoBehaviour
             if (groundDetected) break;
         }
 
-        // หลัง Parry สำเร็จ ต้องรอให้ Tumi กลับมาลงพื้นก่อนซ่อน Bubble
-        if (showParryBubbleUntilGrounded &&
-            (!groundDetected || rb.linearVelocity.sqrMagnitude > 0.0001f))
-        {
-            hasLeftGroundAfterParry = true;
-        }
-
         //if (groundDetected)
         //{
         //    isOnGround = true;
@@ -431,11 +526,6 @@ public class PlayerController : MonoBehaviour
             return;
 
         isOnGround = true;
-
-        if (showParryBubbleUntilGrounded && hasLeftGroundAfterParry && groundDetected)
-        {
-            HideParryBubbleAfterLanding();
-        }
 
         isJumped = false;
         isJumpedFromGround = false;
@@ -593,7 +683,7 @@ public class PlayerController : MonoBehaviour
 
         yield return new WaitForSeconds(inShellTime);
 
-        // ออกจาก InShell; ถ้า Parry สำเร็จ Bubble จะคงอยู่จนกว่าจะลงพื้น
+        // ออกจาก InShell; Bubble จาก Parry สำเร็จจะหายเองตามเวลาที่กำหนด
         jumpState = JumpState.InAir;
         isInShell = false;
     }
@@ -628,6 +718,11 @@ public class PlayerController : MonoBehaviour
 
     private void PredictImpact()
     {
+        // ล้างผลการคาดการณ์เก่าก่อนตรวจใหม่ ป้องกันเครื่องหมายเตือนค้างเมื่อไม่มีสิ่งกีดขวางในเส้นทางแล้ว
+        bounceTarget = null;
+        bounceNormal = Vector2.zero;
+        hasHit = false;
+
         //Debug.Log("Predicting");
         Vector2 velocity = rb.linearVelocity;
 
@@ -701,6 +796,7 @@ public class PlayerController : MonoBehaviour
     {
         bounceNormal = Vector2.zero;
         bounceTarget = null;
+        SetParryWarningIconVisible(false);
     }
 
     private void MakeSlowMotion()
@@ -813,7 +909,7 @@ public class PlayerController : MonoBehaviour
 
         jumpState = JumpState.OnGround;
         isInShell = false;
-        HideParryBubbleAfterLanding();
+        HideParryBubble();
 
         isOnGround = false;
         isAiming = false;
