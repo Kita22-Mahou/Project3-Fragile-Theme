@@ -31,6 +31,8 @@ public class HealthNew : MonoBehaviour
 
     public float safeImpactSpeed = 30f;
 
+    [SerializeField] private float hazardDamage = 20;
+
     [SerializeField] private float damagePerSpeed = 2f;
 
     [SerializeField] private float maxCollisionDamage = 20f;
@@ -100,6 +102,7 @@ public class HealthNew : MonoBehaviour
 
     private PlayerController playerController;
 
+    /*
     [Header("Shell Break Effect")]
 
     [SerializeField] private int shellBreakShardCount = 12;
@@ -112,6 +115,7 @@ public class HealthNew : MonoBehaviour
 
     private static Sprite shellShardSprite;
 
+    */
     [SerializeField] private float respawnDelay = 0.6f;
 
     private void Awake()
@@ -229,19 +233,19 @@ public class HealthNew : MonoBehaviour
 
         // Bounce Section
         //Debug.Log($"{impactVelocity}");
-        if (hitFloor && impactSpeedMagnitude > safeImpactSpeed) // Floor Bounce
+        if (hitFloor /*&& impactSpeedMagnitude > safeImpactSpeed*/) // Floor Bounce
         {
             //Debug.Log("Bounce Up");
             bouncePosX = 0;
             bouncePosY = 1;
         }
-        else if (hitLeftWall && impactSpeedMagnitude > safeImpactSpeed) // WallLeft Bounce
+        else if (hitLeftWall /*&& impactSpeedMagnitude > safeImpactSpeed*/) // WallLeft Bounce
         {
             //Debug.Log("Bounce Right");
             bouncePosX = 1;
             bouncePosY = 0;
         }
-        else if (hitRightWall && impactSpeedMagnitude > safeImpactSpeed) // WallRight Bounce
+        else if (hitRightWall /*&& impactSpeedMagnitude > safeImpactSpeed*/) // WallRight Bounce
         {
             //Debug.Log("Bounce Left");
             bouncePosX = -1;
@@ -252,6 +256,25 @@ public class HealthNew : MonoBehaviour
             //Debug.Log("No Bounce");
             bouncePosX = 0;
             bouncePosY = 0;
+        }
+
+        // Hazard Bounce & Take damage
+        if (collision.gameObject.CompareTag("Hazard"))
+        {
+            if (playerController.isInShell)
+            {
+                Debug.Log("Parry!");
+                playerController.canTempAim = true;
+                playerController.isBounceSuccessed = true;
+                //Debug.Log($"{playerController.canTempAim}");
+                ShellBounce();
+                return;
+            }
+
+            Debug.Log("Hurt");
+            HurtBounce();
+            TakeDamage(hazardDamage);
+            return;
         }
 
         // Take Damage Section
@@ -301,6 +324,7 @@ public class HealthNew : MonoBehaviour
             playerController.isBounceSuccessed = true;
             //Debug.Log($"{playerController.canTempAim}");
             ShellBounce();
+            return;
         }
 
         float excessSpeed = impactSpeedMagnitude - safeImpactSpeed;
@@ -317,6 +341,12 @@ public class HealthNew : MonoBehaviour
     }
 
     private void ShellBounce()
+    {
+        Vector2 bounceForce = new Vector2(bouncePosX * bounceWallPower, bouncePosY * bounceFloorPower);
+        rb.linearVelocity = bounceForce;
+    }
+
+    private void HurtBounce()
     {
         Vector2 bounceForce = new Vector2(bouncePosX * bounceWallPower, bouncePosY * bounceFloorPower);
         rb.linearVelocity = bounceForce;

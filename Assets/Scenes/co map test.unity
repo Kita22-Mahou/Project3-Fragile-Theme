@@ -492329,11 +492329,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1994750403940972139, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 50.7
+      value: 1.9
       objectReference: {fileID: 0}
     - target: {fileID: 1994750403940972139, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 4.2
+      value: 26.8
       objectReference: {fileID: 0}
     - target: {fileID: 1994750403940972139, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
       propertyPath: m_LocalPosition.z
@@ -492380,6 +492380,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4775083938478933952, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
+      propertyPath: inShellTime
+      value: 0.125
+      objectReference: {fileID: 0}
+    - target: {fileID: 4775083938478933952, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
       propertyPath: predictTime
       value: 0.025
       objectReference: {fileID: 0}
@@ -492401,12 +492405,16 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4775083938478933952, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
       propertyPath: predictLayer.m_Bits
-      value: 64
+      value: 576
       objectReference: {fileID: 0}
     - target: {fileID: 5611050714896671065, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
       propertyPath: shellImage
       value: 
       objectReference: {fileID: 1075549474}
+    - target: {fileID: 5611050714896671065, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
+      propertyPath: hazardDamage
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 7431792650135662471, guid: 7ee1e52c08bc8b14eb386b13e9eea597, type: 3}
       propertyPath: m_Name
       value: Tumi Test

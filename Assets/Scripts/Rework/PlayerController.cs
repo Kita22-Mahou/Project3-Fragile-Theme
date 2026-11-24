@@ -473,6 +473,14 @@ public class PlayerController : MonoBehaviour
             canBounce = false;
             return;
         }
+        if (bounceTarget != null)
+        {
+            if (bounceTarget.gameObject.CompareTag("Hazard"))
+            {
+                canBounce = true;
+                return;
+            }
+        }
 
         if (Mathf.Abs(rb.linearVelocityX) > healthNew.safeImpactSpeed && Mathf.Abs(bounceNormal.x) > Mathf.Abs(bounceNormal.y)
             || Mathf.Abs(rb.linearVelocityY) > healthNew.safeImpactSpeed && Mathf.Abs(bounceNormal.y) > Mathf.Abs(bounceNormal.x))

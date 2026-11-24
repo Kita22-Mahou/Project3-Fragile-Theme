@@ -14,7 +14,7 @@ public class Hazard : MonoBehaviour
 
         if (hazardCollider != null)
         {
-            hazardCollider.isTrigger = true;
+            //hazardCollider.isTrigger = true;
         }
     }
 
@@ -24,10 +24,10 @@ public class Hazard : MonoBehaviour
 
         if (hazardCollider != null)
         {
-            hazardCollider.isTrigger = true;
+            //hazardCollider.isTrigger = true;
         }
     }
-
+    /*
     private void OnTriggerEnter2D(Collider2D other)
     {
         ProcessPlayer(other);
@@ -81,4 +81,5 @@ public class Hazard : MonoBehaviour
 
         rb.linearVelocity = new Vector2(directionX * knockbackX, knockbackY);
     }
+    */
 }
