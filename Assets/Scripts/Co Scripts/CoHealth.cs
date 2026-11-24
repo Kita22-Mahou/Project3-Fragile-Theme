@@ -245,7 +245,7 @@ public class CoHealth : MonoBehaviour
 
         if (playerController.isInShell)
         {
-            playerController.canAirJump = true;
+            playerController.canTempAim = true;
             ShellBounce();
         }
 

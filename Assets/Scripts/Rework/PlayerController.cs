@@ -21,6 +21,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private bool isAiming;
     [SerializeField] private bool isJumped;
     [SerializeField] private bool isAirAiming;
+    [SerializeField] private bool isTempAiming;
     [SerializeField] public bool isInShell;
     [SerializeField] private bool isPredict;
 
@@ -49,6 +50,7 @@ public class PlayerController : MonoBehaviour
     [Header("In Shell Setting")]
     [SerializeField] private float inShellTime = 1;
     [SerializeField] private bool canBounce;
+    [SerializeField] public bool canTempAim;
 
     [Header("Predict Impact Setting")]
     [SerializeField] private float predictTimeMax;
@@ -56,8 +58,10 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private LayerMask predictLayer;
     [SerializeField] private Collider2D bounceTarget;
     [SerializeField] private Vector2 bounceNormal;
+    [SerializeField] private Vector2 bouncePoint;
     [SerializeField] private bool isSlowMotion;
     [SerializeField] private bool isTakeDamage = false;
+    [SerializeField] public bool isBounceSuccessed = false;
     private CircleCollider2D playerCollider;
 
     [Header("Time Scale Setting")]
@@ -80,6 +84,10 @@ public class PlayerController : MonoBehaviour
     private Rigidbody2D rb;
     private Camera mainCamera;
     private HealthNew healthNew;
+
+    private Vector2 hitPoint;
+    private Vector2 hitNormal;
+    private bool hasHit;
 
     [Header("Health Integration")]
     public bool movementLocked = false;
@@ -148,13 +156,18 @@ public class PlayerController : MonoBehaviour
             }
 
             // เล็งกลางอากาศ
-            if (isJumpedFromGround && canAirJump && isJumped)
+            if (isJumpedFromGround && canAirJump && isJumped && !canTempAim)
             {
                 //Debug.Log("Air Aiming");
                 isAirAiming = true;
             }
+
+            if (!isTempAiming && canTempAim && !isOnGround)
+            {
+                isTempAiming = true;
+            }
         }
-        if (Input.GetMouseButtonUp(0) && (isAiming || isAirAiming))           // ปล่อยเพื่อ Jump
+        if (Input.GetMouseButtonUp(0) && (isAiming || isAirAiming || isTempAiming))           // ปล่อยเพื่อ Jump
         {
             //Debug.Log("UnClick");
 
@@ -179,10 +192,18 @@ public class PlayerController : MonoBehaviour
 
                 canAirJump = false;
             }
+
+            if (isTempAiming)
+            {
+                isTempAiming = false;
+                Jump();
+
+                canTempAim = false;
+            }
         }
 
         //เล็งเมื่อกำลังกด mouse และครบเงื่อนไข
-        if (isAiming || isAirAiming)
+        if (isAiming || isAirAiming || isTempAiming)
         {
             Aiming();
         }
@@ -199,18 +220,19 @@ public class PlayerController : MonoBehaviour
         //ตัวเปลี่ยนให้เป็น OnGround state
         if (isOnGround && !isAiming)
         {
-            bounceNormal = Vector2.zero;
-            bounceTarget = null;
             jumpState = JumpState.OnGround;
         }
 
         float normalX = Mathf.Abs(bounceNormal.x);
+        float normalY = Mathf.Abs(bounceNormal.y);
 
-        if (Mathf.Abs(bounceNormal.x) > 0)
+        float threshold = 0.001f;
+
+        if (normalY > normalX && normalY > threshold)
         {
-            if (Mathf.Abs(rb.linearVelocityY) > healthNew.safeImpactSpeed && Mathf.Abs(bounceNormal.y) > Mathf.Abs(bounceNormal.x))
+            // ชนพื้นหรือเพดาน
+            if (Mathf.Abs(rb.linearVelocityY) > healthNew.safeImpactSpeed)
             {
-                //Debug.Log("isTakeDamage from wall");
                 isTakeDamage = true;
             }
             else
@@ -218,11 +240,11 @@ public class PlayerController : MonoBehaviour
                 isTakeDamage = false;
             }
         }
-        else if (Mathf.Abs(bounceNormal.y) > 0)
+        else if (normalX > normalY && normalX > threshold)
         {
-            if (Mathf.Abs(rb.linearVelocityX) > healthNew.safeImpactSpeed && Mathf.Abs(bounceNormal.x) > Mathf.Abs(bounceNormal.y))
+            // ชนกำแพง
+            if (Mathf.Abs(rb.linearVelocityX) > healthNew.safeImpactSpeed)
             {
-                //Debug.Log("isTakeDamage from ground");
                 isTakeDamage = true;
             }
             else
@@ -247,11 +269,11 @@ public class PlayerController : MonoBehaviour
         }
 
         // ทำ slow motion ตอน AirAiming และ Predict เท่านั้น
-        if (isAirAiming || isPredict)
+        if (isAirAiming || isPredict || isTempAiming)
         {
             MakeSlowMotion();
         }
-        else if (!isAirAiming && !isPredict)
+        else if (!isAirAiming && !isPredict && !isTempAiming)
         {
             StopSlowMotion();
         }
@@ -306,7 +328,9 @@ public class PlayerController : MonoBehaviour
         isJumped = false;
         isJumpedFromGround = false;
 
-        if (isAirAiming)
+        canTempAim = false;
+
+        if (isAirAiming || isTempAiming)
         {
             isAirAiming = false;
             jumpChargeTime = 0f;
@@ -432,7 +456,7 @@ public class PlayerController : MonoBehaviour
         if (jumpState != JumpState.InAir)
             yield break;
 
-        Debug.Log("In Shell!!");
+        //Debug.Log("In Shell!!");
         jumpState = JumpState.InShell;
         isInShell = true;
 
@@ -450,8 +474,8 @@ public class PlayerController : MonoBehaviour
             return;
         }
 
-        float speed = Mathf.Abs(rb.linearVelocity.magnitude);
-        if (speed > healthNew.safeImpactSpeed)
+        if (Mathf.Abs(rb.linearVelocityX) > healthNew.safeImpactSpeed && Mathf.Abs(bounceNormal.x) > Mathf.Abs(bounceNormal.y)
+            || Mathf.Abs(rb.linearVelocityY) > healthNew.safeImpactSpeed && Mathf.Abs(bounceNormal.y) > Mathf.Abs(bounceNormal.x))
         {
             canBounce = true;
         }
@@ -473,6 +497,7 @@ public class PlayerController : MonoBehaviour
             bounceTarget = null;
             bounceNormal = Vector2.zero;
             predictTime = 0.025f;
+            hasHit = false;
             return;
         }
 
@@ -519,8 +544,16 @@ public class PlayerController : MonoBehaviour
         //parryNormal = hit.normal;
         if (hit.collider != null)
         {
+            bouncePoint = hit.point;
             bounceTarget = hit.collider;
             bounceNormal = hit.normal;
+
+            hitPoint = hit.point;
+            hitNormal = hit.normal;
+            hasHit = true;
+
+            //Debug.Log("Hit Normal: " + hit.normal);
+            //Debug.Log("Bounce Normal: " + bounceNormal);
         }
     }
 
@@ -535,7 +568,7 @@ public class PlayerController : MonoBehaviour
         if (isSlowMotion)
             return;
 
-        Debug.Log("Slow Motion");
+        //Debug.Log("Slow Motion");
         isSlowMotion = true;
 
         maxChargeTime = AirAimingMaxChargeTime;
@@ -547,7 +580,7 @@ public class PlayerController : MonoBehaviour
         if (!isSlowMotion)
             return;
 
-        Debug.Log("Stop Slow Motion");
+        //Debug.Log("Stop Slow Motion");
         isSlowMotion = false;
 
         maxChargeTime = NormalMaxChargeTime;
@@ -562,7 +595,7 @@ public class PlayerController : MonoBehaviour
             return;
 
         jumpTrajectory.UpdateTrajectory(
-            isAiming || isAirAiming,
+            isAiming || isAirAiming || isTempAiming,
             aimDirection,
             GetJumpPower()
         );
@@ -617,6 +650,54 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    void ChangeAnimation()
+    {
+        if (jumpState == JumpState.OnGround)
+        {
+            animator.Play("Player idle");
+        }
+        else if (jumpState == JumpState.Aiming)
+        {
+            animator.Play("PlayerAiming");
+        }
+        else if (jumpState == JumpState.InAir)
+        {
+            animator.Play("PlayerInAir");
+        }
+    }
+
+    // เรียกจาก HealthNew หลังเกิดใหม่
+    public void ResetAfterRespawn()
+    {
+        movementLocked = false;
+
+        jumpState = JumpState.OnGround;
+
+        isOnGround = false;
+        isAiming = false;
+        isJumped = false;
+        isAirAiming = false;
+
+        isJumpedFromGround = false;
+        canAirJump = true;
+
+        jumpChargeTime = 0f;
+        jumpPowerMultiplier = 1f;
+
+        aimDirection = Vector2.up;
+
+        Time.timeScale = 1f;
+
+        if (rb != null)
+        {
+            rb.linearVelocity = Vector2.zero;
+            rb.angularVelocity = 0f;
+        }
+
+        HideJumpTrajectory();
+    }
+    #endregion
+
     private void OnDrawGizmosSelected()
     {
         if (groundCheckPoint == null) return;
@@ -641,7 +722,7 @@ public class PlayerController : MonoBehaviour
         {
             rb = GetComponent<Rigidbody2D>();
             playerCollider = GetComponent<CircleCollider2D>();
-            Debug.Log("No rb");
+            //Debug.Log("No rb");
             return;
         }
 
@@ -692,53 +773,23 @@ public class PlayerController : MonoBehaviour
 
         // วาดเส้น CircleCast
         Gizmos.DrawLine(castOrigin, castEnd);
+
+
+        // ถ้า CircleCast ชน
+        if (hasHit)
+        {
+            // จุดที่ชน
+            Gizmos.color = Color.red;
+            Gizmos.DrawSphere(hitPoint, 0.08f);
+
+            // เส้น Normal
+            Gizmos.color = Color.cyan;
+            Gizmos.DrawRay(hitPoint, hitNormal * 1f);
+
+            // วาดเส้นขีดเล็ก ๆ ที่ปลาย Normal
+            Vector2 normalEnd = hitPoint + hitNormal;
+
+            Gizmos.DrawSphere(normalEnd, 0.04f);
+        }
     }
-
-    void ChangeAnimation()
-    {
-        if (jumpState == JumpState.OnGround)
-        {
-            animator.Play("Player idle");
-        }
-        else if (jumpState == JumpState.Aiming)
-        {
-            animator.Play("PlayerAiming");
-        }
-        else if (jumpState == JumpState.InAir)
-        {
-            animator.Play("PlayerInAir");
-        }
-    }
-
-    // เรียกจาก HealthNew หลังเกิดใหม่
-    public void ResetAfterRespawn()
-    {
-        movementLocked = false;
-
-        jumpState = JumpState.OnGround;
-
-        isOnGround = false;
-        isAiming = false;
-        isJumped = false;
-        isAirAiming = false;
-
-        isJumpedFromGround = false;
-        canAirJump = true;
-
-        jumpChargeTime = 0f;
-        jumpPowerMultiplier = 1f;
-
-        aimDirection = Vector2.up;
-
-        Time.timeScale = 1f;
-
-        if (rb != null)
-        {
-            rb.linearVelocity = Vector2.zero;
-            rb.angularVelocity = 0f;
-        }
-
-        HideJumpTrajectory();
-    }
-    #endregion
 }

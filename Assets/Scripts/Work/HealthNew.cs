@@ -197,7 +197,7 @@ public class HealthNew : MonoBehaviour
         foreach (ContactPoint2D contact in collision.contacts)
         {
 
-            contacts.Add(contact);
+            //contacts.Add(contact);
             Vector2 normal = GetNormalTowardsPlayer(contact);
 
             if (normal.y > 0.5f)
@@ -254,12 +254,6 @@ public class HealthNew : MonoBehaviour
             bouncePosY = 0;
         }
 
-        if (playerController.isInShell)
-        {
-            playerController.canAirJump = true;
-            ShellBounce();
-        }
-
         // Take Damage Section
         // ชนพื้น
         if (hitFloor)
@@ -299,6 +293,14 @@ public class HealthNew : MonoBehaviour
         if (impactSpeed <= safeImpactSpeed)
         {
             return;
+        }
+
+        if (playerController.isInShell)
+        {
+            playerController.canTempAim = true;
+            playerController.isBounceSuccessed = true;
+            //Debug.Log($"{playerController.canTempAim}");
+            ShellBounce();
         }
 
         float excessSpeed = impactSpeedMagnitude - safeImpactSpeed;
@@ -407,7 +409,7 @@ public class HealthNew : MonoBehaviour
 
         //UpdateShellUI();
 
-        Debug.Log($"HP: {currentHP:F1} / {maxHP:F1}");
+        //Debug.Log($"HP: {currentHP:F1} / {maxHP:F1}");
 
         if (currentHP <= 0f)
         {
@@ -688,23 +690,23 @@ public class HealthNew : MonoBehaviour
     }
     */
 
-    private List<ContactPoint2D> contacts = new List<ContactPoint2D>();
-    private void OnDrawGizmos()
-    {
-        foreach (ContactPoint2D contact in contacts)
-        {
-            Vector2 normal = GetNormalTowardsPlayer(contact);
+    //private List<ContactPoint2D> contacts = new List<ContactPoint2D>();
+    //private void OnDrawGizmos()
+    //{
+    //    foreach (ContactPoint2D contact in contacts)
+    //    {
+    //        Vector2 normal = GetNormalTowardsPlayer(contact);
 
-            // จุดสัมผัส
-            Gizmos.color = UnityEngine.Color.red;
-            Gizmos.DrawSphere(contact.point, 0.08f);
+    //        // จุดสัมผัส
+    //        Gizmos.color = UnityEngine.Color.red;
+    //        Gizmos.DrawSphere(contact.point, 0.08f);
 
-            // ทิศทาง Normal
-            //Gizmos.color = UnityEngine.Color.green;
-            //Gizmos.DrawLine(
-            //    contact.point,
-            //    contact.point + normal * 0.5f
-            //);
-        }
-    }
+    //        // ทิศทาง Normal
+    //        //Gizmos.color = UnityEngine.Color.green;
+    //        //Gizmos.DrawLine(
+    //        //    contact.point,
+    //        //    contact.point + normal * 0.5f
+    //        //);
+    //    }
+    //}
 }
