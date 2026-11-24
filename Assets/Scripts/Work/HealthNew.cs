@@ -4,6 +4,7 @@ using System.Drawing;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.U2D.Animation;
 
 public class HealthNew : MonoBehaviour
 {
@@ -37,7 +38,6 @@ public class HealthNew : MonoBehaviour
 
     [SerializeField] private float maxCollisionDamage = 20f;
 
-    // ดาเมจที่ต่ำกว่าค่านี้ถือเป็นแค่การกระทบเบา ๆ จะไม่หัก HP
     [SerializeField] private float minCollisionDamage = 1f;
 
     [Header("Wall Collision")]
@@ -46,19 +46,14 @@ public class HealthNew : MonoBehaviour
 
     [SerializeField] private bool illnessEnabled = true;
 
-    // ดาเมจต่อวินาทีที่อยู่นอก SaveZone
     [SerializeField] private float illnessDamagePerSecond = 1f;
 
-    // หัก HP ทุกกี่วินาที
     [SerializeField] private float illnessTickInterval = 1f;
 
-    // true = ถ้ากระดองกำลังป้องกันอยู่ (Space) จะกันดาเมจจากอาการป่วยด้วย
     [SerializeField] private bool shellBlocksIllness = false;
 
-    // true = เล่นเสียงโดนดาเมจทุกครั้งที่หัก HP จากอาการป่วย
     [SerializeField] private bool illnessPlaysDamageSound = false;
 
-    // true = จอแดงกะพริบ (Red Vignette) ทุกครั้งที่หัก HP จากอาการป่วย
     [SerializeField] private bool illnessFlashesScreen = true;
 
     private float illnessTimer;
@@ -71,12 +66,105 @@ public class HealthNew : MonoBehaviour
     [Tooltip("ตัวคูณแรงกระโดด ตามระดับความเสียหาย (ความสูงกระโดดลดลงตามกำลังสองของค่านี้)")]
     [SerializeField] private float[] stageJumpPowerMultiplier = { 1f, 1f, 0.85f, 0.85f };
 
-    [Header("Shell HP UI")]
+    [Header("Shell HP UI (5 Phases)")]
     [SerializeField] private Image shellImage;
+
+    [Tooltip("Phase 1: UI_Shell (กระดองปกติ)")]
     [SerializeField] private Sprite fullShell;
+
+    [Tooltip("Phase 2: UI_Shell_0")]
     [SerializeField] private Sprite crackedShell;
+
+    [Tooltip("Phase 3: UI_Shell_1")]
     [SerializeField] private Sprite brokenShell2;
+
+    [Tooltip("Phase 4: UI_Shell_2")]
     [SerializeField] private Sprite brokenShell1;
+
+    [Tooltip("Phase 5: UI_Shell_3 (เสียหายมากที่สุด)")]
+    [SerializeField] private Sprite brokenShellFinal;
+
+    [Header("Shell UI Damage Thresholds (% Damage Taken)")]
+    [Tooltip("เมื่อเสีย HP ถึงค่านี้ จะเปลี่ยนเป็น Phase 2")]
+    [Range(0f, 100f)]
+    [SerializeField] private float shellPhase2AtDamagePercent = 20f;
+
+    [Tooltip("เมื่อเสีย HP ถึงค่านี้ จะเปลี่ยนเป็น Phase 3")]
+    [Range(0f, 100f)]
+    [SerializeField] private float shellPhase3AtDamagePercent = 40f;
+
+    [Tooltip("เมื่อเสีย HP ถึงค่านี้ จะเปลี่ยนเป็น Phase 4")]
+    [Range(0f, 100f)]
+    [SerializeField] private float shellPhase4AtDamagePercent = 60f;
+
+    [Tooltip("เมื่อเสีย HP ถึงค่านี้ จะเปลี่ยนเป็น Phase 5")]
+    [Range(0f, 100f)]
+    [SerializeField] private float shellPhase5AtDamagePercent = 80f;
+
+    [Header("Phase 5 Critical Effect")]
+    [SerializeField] private bool phase5ShakeEnabled = true;
+    [Tooltip("ระยะสั่นของกระดอง UI หน่วยเป็น UI units")]
+    [SerializeField] private float phase5ShakeAmount = 3f;
+    [Tooltip("ความเร็วการสั่น")]
+    [SerializeField] private float phase5ShakeSpeed = 25f;
+    [SerializeField] private bool phase5BlinkEnabled = true;
+    [Tooltip("ความเร็วการกระพริบ")]
+    [SerializeField] private float phase5BlinkSpeed = 4f;
+    [Range(0f, 1f)]
+    [Tooltip("ค่า Alpha ต่ำสุดตอนกระพริบ: 0 = หายไป, 1 = ไม่โปร่งใส")]
+    [SerializeField] private float phase5MinAlpha = 0.2f;
+
+    private RectTransform shellImageRect;
+    private Vector2 shellImageOriginalPosition;
+    private UnityEngine.Color shellImageOriginalColor = UnityEngine.Color.white;
+    private bool shellPhase5EffectActive;
+
+    [Header("Damage Hit Effect")]
+    [SerializeField] private bool damageHitShakeEnabled = true;
+    [Tooltip("ระยะเวลาที่ UI กระดองสั่นหลังได้รับดาเมจ")]
+    [SerializeField] private float damageHitShakeDuration = 0.22f;
+    [Tooltip("ระยะการสั่นของ UI กระดอง")]
+    [SerializeField] private float damageHitShakeAmount = 6f;
+    [Tooltip("ความเร็วการสั่นหลังได้รับดาเมจ")]
+    [SerializeField] private float damageHitShakeSpeed = 45f;
+
+    [SerializeField] private bool damageRedFlashEnabled = true;
+    [Tooltip("ระยะเวลาที่ UI กระดองเปลี่ยนเป็นสีแดง")]
+    [SerializeField] private float damageRedFlashDuration = 0.2f;
+    [Range(0f, 1f)]
+    [Tooltip("ความเข้มของสีแดง: 0 = ไม่เปลี่ยนสี, 1 = แดงเต็มที่")]
+    [SerializeField] private float damageRedFlashStrength = 0.85f;
+    [SerializeField] private UnityEngine.Color damageRedFlashColor = new UnityEngine.Color(1f, 0.1f, 0.1f, 1f);
+
+    private float damageHitShakeTimer;
+    private float damageRedFlashTimer;
+
+    [Header("Sprite Resolver (HP Damage Stages)")]
+    [Tooltip("Sprite Resolver ของกระดอง (ลากจาก Bone Shell มาใส่)")]
+    [SerializeField] private SpriteResolver shellSpriteResolver;
+
+    [Tooltip("Sprite Resolver ของใบหน้า (ลากจาก Bone Face มาใส่)")]
+    [SerializeField] private SpriteResolver faceSpriteResolver;
+
+    [Tooltip("ใส่ Label จาก Sprite Library ตามลำดับ: 0=ปกติ, 1=เริ่มเสียหาย, 2=เสียหายขั้น 2, 3=เสียหายขั้น 3")]
+    [SerializeField]
+    private string[] shellResolverLabels =
+    {
+        "Shell Normal",
+        "",
+        "",
+        ""
+    };
+
+    [Tooltip("ใส่ Label จาก Sprite Library ตามลำดับ: 0=ปกติ, 1=เริ่มเสียหาย, 2=เสียหายขั้น 2, 3=เสียหายขั้น 3")]
+    [SerializeField]
+    private string[] faceResolverLabels =
+    {
+        "Face Normal",
+        "",
+        "",
+        ""
+    };
 
     [Header("Death Fade")]
     [Tooltip("CanvasGroup ของ Image สีดำเต็มจอ (เว้นว่าง = ไม่ fade)")]
@@ -92,17 +180,24 @@ public class HealthNew : MonoBehaviour
     [SerializeField] private float bounceWallPower;
 
 
-    private float crackAtDamagePercent = 10f;
-    private float breakOneSectionAtPercent = 33f;
-    private float breakTwoSectionsAtPercent = 66f;
+    [Header("Sprite Resolver HP Thresholds (% Damage Taken)")]
+    [Range(0f, 100f)]
+    [SerializeField] private float crackAtDamagePercent = 10f;
+
+    [Range(0f, 100f)]
+    [SerializeField] private float breakOneSectionAtPercent = 33f;
+
+    [Range(0f, 100f)]
+    [SerializeField] private float breakTwoSectionsAtPercent = 66f;
+
+    private int currentSpriteStage = -1;
 
     private ShellDefense shellDefense;
 
     private Rigidbody2D rb;
 
     private PlayerController playerController;
-
-    /*
+    
     [Header("Shell Break Effect")]
 
     [SerializeField] private int shellBreakShardCount = 12;
@@ -115,7 +210,7 @@ public class HealthNew : MonoBehaviour
 
     private static Sprite shellShardSprite;
 
-    */
+    
     [SerializeField] private float respawnDelay = 0.6f;
 
     private void Awake()
@@ -137,6 +232,8 @@ public class HealthNew : MonoBehaviour
             fadeGroup.blocksRaycasts = false;
         }
 
+        CacheShellImageDefaults();
+
         maxHP = Mathf.Max(1f, maxHP);
         currentHP = Mathf.Clamp(currentHP, 0f, maxHP);
 
@@ -152,7 +249,14 @@ public class HealthNew : MonoBehaviour
         breakOneSectionAtPercent = Mathf.Clamp(breakOneSectionAtPercent, crackAtDamagePercent, 100f);
         breakTwoSectionsAtPercent = Mathf.Clamp(breakTwoSectionsAtPercent, breakOneSectionAtPercent, 100f);
 
-        //UpdateShellUI();
+        shellPhase2AtDamagePercent = Mathf.Clamp(shellPhase2AtDamagePercent, 0f, 100f);
+        shellPhase3AtDamagePercent = Mathf.Clamp(shellPhase3AtDamagePercent, shellPhase2AtDamagePercent, 100f);
+        shellPhase4AtDamagePercent = Mathf.Clamp(shellPhase4AtDamagePercent, shellPhase3AtDamagePercent, 100f);
+        shellPhase5AtDamagePercent = Mathf.Clamp(shellPhase5AtDamagePercent, shellPhase4AtDamagePercent, 100f);
+
+        UpdateSpriteResolverByHP();
+
+        UpdateShellUI();
 
         if (currentHP <= 0f)
         {
@@ -175,6 +279,7 @@ public class HealthNew : MonoBehaviour
 
         UpdateIllness();
         UpdateIllness();
+        UpdateShellPhase5Effect();
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
@@ -184,7 +289,6 @@ public class HealthNew : MonoBehaviour
             return;
         }
 
-        // ยกเว้น Layer ที่ไม่ต้องการคิดดาเมจ
         int otherLayer = collision.gameObject.layer;
 
         if ((ignoreDamageLayers.value & (1 << otherLayer)) != 0)
@@ -322,7 +426,6 @@ public class HealthNew : MonoBehaviour
         {
             playerController.canTempAim = true;
             playerController.isBounceSuccessed = true;
-            //Debug.Log($"{playerController.canTempAim}");
             ShellBounce();
             return;
         }
@@ -331,7 +434,6 @@ public class HealthNew : MonoBehaviour
 
         float damage = Mathf.Min(excessSpeed * damagePerSpeed, maxCollisionDamage);
 
-        // กระทบเบา ๆ ไม่ถือว่าเป็นความเสียหาย
         if (damage < minCollisionDamage)
         {
             return;
@@ -425,6 +527,8 @@ public class HealthNew : MonoBehaviour
         }
 
         currentHP = Mathf.Clamp(currentHP - damage, 0f, maxHP);
+        TriggerShellDamageEffect();
+        UpdateSpriteResolverByHP();
 
         if (playSound)
         {
@@ -437,9 +541,9 @@ public class HealthNew : MonoBehaviour
             DamageVignette.Flash();
         }
 
-        //UpdateShellUI();
+        UpdateShellUI();
 
-        //Debug.Log($"HP: {currentHP:F1} / {maxHP:F1}");
+        Debug.Log($"HP: {currentHP:F1} / {maxHP:F1}");
 
         if (currentHP <= 0f)
         {
@@ -455,8 +559,208 @@ public class HealthNew : MonoBehaviour
         }
 
         currentHP = Mathf.Clamp(currentHP + amount, 0f, maxHP);
+        UpdateSpriteResolverByHP();
 
-        //UpdateShellUI();
+        UpdateShellUI();
+    }
+
+    private void UpdateShellUI()
+    {
+        if (shellImage == null)
+            return;
+
+        float damagePercent = maxHP > 0f
+            ? (1f - currentHP / maxHP) * 100f
+            : 100f;
+
+        Sprite targetSprite;
+
+        if (damagePercent >= shellPhase5AtDamagePercent)
+            targetSprite = brokenShellFinal;
+        else if (damagePercent >= shellPhase4AtDamagePercent)
+            targetSprite = brokenShell1;
+        else if (damagePercent >= shellPhase3AtDamagePercent)
+            targetSprite = brokenShell2;
+        else if (damagePercent >= shellPhase2AtDamagePercent)
+            targetSprite = crackedShell;
+        else
+            targetSprite = fullShell;
+
+        if (targetSprite != null && shellImage.sprite != targetSprite)
+            shellImage.sprite = targetSprite;
+
+        SetShellPhase5Effect(damagePercent >= shellPhase5AtDamagePercent);
+    }
+
+    private void CacheShellImageDefaults()
+    {
+        if (shellImage == null)
+            return;
+
+        shellImageRect = shellImage.rectTransform;
+        shellImageOriginalPosition = shellImageRect.anchoredPosition;
+        shellImageOriginalColor = shellImage.color;
+    }
+
+    private void SetShellPhase5Effect(bool active)
+    {
+        if (shellPhase5EffectActive == active)
+            return;
+
+        shellPhase5EffectActive = active;
+
+        if (!active)
+            RestoreShellImageDefaults();
+    }
+
+    private void TriggerShellDamageEffect()
+    {
+        if (shellImage == null)
+            return;
+
+        if (damageHitShakeEnabled)
+            damageHitShakeTimer = Mathf.Max(0f, damageHitShakeDuration);
+
+        if (damageRedFlashEnabled)
+            damageRedFlashTimer = Mathf.Max(0f, damageRedFlashDuration);
+    }
+
+    private void UpdateShellPhase5Effect()
+    {
+        if (shellImage == null)
+            return;
+
+        float deltaTime = Time.unscaledDeltaTime;
+        float time = Time.unscaledTime;
+
+        damageHitShakeTimer = Mathf.Max(0f, damageHitShakeTimer - deltaTime);
+        damageRedFlashTimer = Mathf.Max(0f, damageRedFlashTimer - deltaTime);
+
+        bool damageShakeActive = damageHitShakeEnabled && damageHitShakeTimer > 0f;
+        bool damageFlashActive = damageRedFlashEnabled && damageRedFlashTimer > 0f;
+
+        if (!shellPhase5EffectActive && !damageShakeActive && !damageFlashActive)
+        {
+            RestoreShellImageDefaults();
+            return;
+        }
+
+        Vector2 totalOffset = Vector2.zero;
+
+        if (shellPhase5EffectActive && phase5ShakeEnabled)
+        {
+            float shakeTime = time * Mathf.Max(0f, phase5ShakeSpeed);
+            totalOffset += new Vector2(
+                Mathf.Sin(shakeTime * 1.7f) * phase5ShakeAmount,
+                Mathf.Cos(shakeTime * 2.3f) * phase5ShakeAmount * 0.7f
+            );
+        }
+
+        if (damageShakeActive)
+        {
+            float shakeProgress = damageHitShakeDuration > 0f
+                ? Mathf.Clamp01(damageHitShakeTimer / damageHitShakeDuration)
+                : 0f;
+            float hitShakeTime = time * Mathf.Max(0f, damageHitShakeSpeed);
+
+            
+            totalOffset += new Vector2(
+                Mathf.Sin(hitShakeTime * 1.9f) * damageHitShakeAmount * shakeProgress,
+                Mathf.Cos(hitShakeTime * 2.7f) * damageHitShakeAmount * 0.65f * shakeProgress
+            );
+        }
+
+        if (shellImageRect != null)
+            shellImageRect.anchoredPosition = shellImageOriginalPosition + totalOffset;
+
+        float alphaMultiplier = 1f;
+        if (shellPhase5EffectActive && phase5BlinkEnabled)
+        {
+            float blink = Mathf.PingPong(time * Mathf.Max(0f, phase5BlinkSpeed), 1f);
+            alphaMultiplier = Mathf.Lerp(phase5MinAlpha, 1f, blink);
+        }
+
+        UnityEngine.Color finalColor = shellImageOriginalColor;
+
+        if (damageFlashActive)
+        {
+            float flashProgress = damageRedFlashDuration > 0f
+                ? Mathf.Clamp01(damageRedFlashTimer / damageRedFlashDuration)
+                : 0f;
+            float redStrength = damageRedFlashStrength * flashProgress;
+            finalColor = UnityEngine.Color.Lerp(
+                shellImageOriginalColor,
+                damageRedFlashColor,
+                redStrength
+            );
+        }
+
+        finalColor.a = shellImageOriginalColor.a * alphaMultiplier;
+        shellImage.color = finalColor;
+    }
+
+    private void RestoreShellImageDefaults()
+    {
+        if (shellImageRect != null)
+            shellImageRect.anchoredPosition = shellImageOriginalPosition;
+
+        if (shellImage != null)
+            shellImage.color = shellImageOriginalColor;
+    }
+
+    private void OnDisable()
+    {
+        shellPhase5EffectActive = false;
+        damageHitShakeTimer = 0f;
+        damageRedFlashTimer = 0f;
+        RestoreShellImageDefaults();
+    }
+
+    private void UpdateSpriteResolverByHP()
+    {
+        float damagePercent = maxHP > 0f
+            ? (1f - currentHP / maxHP) * 100f
+            : 100f;
+
+        int newStage = 0;
+
+        if (damagePercent >= crackAtDamagePercent)
+            newStage = 1;
+
+        if (damagePercent >= breakOneSectionAtPercent)
+            newStage = 2;
+
+        if (damagePercent >= breakTwoSectionsAtPercent)
+            newStage = 3;
+
+        if (newStage == currentSpriteStage)
+            return;
+
+        currentSpriteStage = newStage;
+
+        ApplySpriteResolverLabel(shellSpriteResolver, shellResolverLabels, newStage);
+        ApplySpriteResolverLabel(faceSpriteResolver, faceResolverLabels, newStage);
+    }
+
+    private void ApplySpriteResolverLabel(
+        SpriteResolver resolver,
+        string[] labels,
+        int stage)
+    {
+        if (resolver == null || labels == null || stage < 0 || stage >= labels.Length)
+            return;
+
+        string label = labels[stage];
+
+        if (string.IsNullOrWhiteSpace(label))
+            return;
+
+        string category = resolver.GetCategory();
+
+        if (string.IsNullOrWhiteSpace(category))
+            return;
+
+        resolver.SetCategoryAndLabel(category, label);
     }
 
     public void Die()
@@ -468,8 +772,8 @@ public class HealthNew : MonoBehaviour
 
         isDead = true;
         currentHP = 0f;
+        UpdateShellUI();
         GameAudio.Instance?.PlayDeath();
-        //UpdateShellUI();
 
         if (rb != null)
         {
@@ -500,18 +804,14 @@ public class HealthNew : MonoBehaviour
 
     private IEnumerator RespawnAfterDelay()
     {
-        // รอให้เห็นฉากตอนตายสักครู่ก่อนเริ่ม fade
         yield return new WaitForSecondsRealtime(respawnDelay);
 
-        // 1) จอค่อยๆ ดำ
         yield return FadeTo(1f, fadeOutDuration);
 
-        // 2) เกิดใหม่ตอนจอดำ ผู้เล่นจะไม่เห็นการวาร์ป
         Checkpoint.RespawnPlayer(transform);
 
         yield return new WaitForSecondsRealtime(blackHoldDuration);
 
-        // 3) จอค่อยๆ สว่างกลับมา
         yield return FadeTo(0f, fadeInDuration);
     }
 
@@ -544,6 +844,9 @@ public class HealthNew : MonoBehaviour
         currentHP = maxHP;
         isDead = false;
         illnessTimer = 0f;
+        damageHitShakeTimer = 0f;
+        damageRedFlashTimer = 0f;
+        UpdateSpriteResolverByHP();
 
         if (rb != null)
         {
@@ -557,7 +860,7 @@ public class HealthNew : MonoBehaviour
             playerController.ResetAfterRespawn();
         }
 
-        //UpdateShellUI();
+        UpdateShellUI();
     }
 
 
@@ -566,177 +869,5 @@ public class HealthNew : MonoBehaviour
         ResetAfterRespawn();
     }
 
-    /*
-    private void SpawnShellBreakEffect(int stage)
-    {
-        RectTransform shellRect = shellImage.rectTransform;
-        RectTransform parent = shellRect.parent as RectTransform;
-
-        if (parent == null)
-        {
-            return;
-        }
-
-        Sprite shardSprite = GetShellShardSprite();
-
-        UnityEngine.Color shardColor = stage >= 3
-            ? new UnityEngine.Color(0.75f, 0.32f, 0.24f, 1f)
-            : new UnityEngine.Color(0.45f, 0.72f, 0.38f, 1f);
-
-        for (int i = 0; i < shellBreakShardCount; i++)
-        {
-            GameObject shard = new GameObject(
-                "ShellBreakShard",
-                typeof(RectTransform),
-                typeof(CanvasRenderer),
-                typeof(Image)
-            );
-
-            shard.transform.SetParent(parent, false);
-            shard.transform.SetAsLastSibling();
-
-            RectTransform shardRect = shard.GetComponent<RectTransform>();
-            Image shardImage = shard.GetComponent<Image>();
-
-            shardRect.anchorMin = shellRect.anchorMin;
-            shardRect.anchorMax = shellRect.anchorMax;
-            shardRect.pivot = shellRect.pivot;
-
-            shardRect.anchoredPosition =
-                shellRect.anchoredPosition + Random.insideUnitCircle * 12f;
-
-            shardRect.sizeDelta = new Vector2(
-                Random.Range(4f, 9f),
-                Random.Range(7f, 15f)
-            );
-
-            shardRect.localRotation =
-                Quaternion.Euler(0f, 0f, Random.Range(0f, 360f));
-
-            shardRect.localScale = Vector3.one;
-
-            shardImage.sprite = shardSprite;
-            shardImage.raycastTarget = false;
-
-            // สลับเศษสีทองกับสีของกระดอง
-            shardImage.color = Random.value > 0.5f
-                ? new UnityEngine.Color(0.82f, 0.66f, 0.38f, 1f)
-                : shardColor;
-
-            Vector2 direction = Random.insideUnitCircle.normalized;
-
-            if (direction.sqrMagnitude < 0.01f)
-            {
-                direction = Vector2.up;
-            }
-
-            Vector2 velocity = direction * Random.Range(
-                shellBreakShardSpeed * 0.6f,
-                shellBreakShardSpeed * 1.3f
-            );
-
-            float rotationSpeed = Random.Range(-500f, 500f);
-
-            StartCoroutine(AnimateShellShard(
-                shardRect,
-                shardImage,
-                velocity,
-                rotationSpeed
-            ));
-        }
-    }
     
-
-    private Sprite GetShellShardSprite()
-    {
-        if (shellShardSprite != null)
-        {
-            return shellShardSprite;
-        }
-
-        Texture2D texture = new Texture2D(
-            1,
-            1,
-            TextureFormat.RGBA32,
-            false
-        );
-
-        texture.name = "ShellShardTexture";
-        texture.SetPixel(0, 0, UnityEngine.Color.white);
-        texture.Apply();
-
-        shellShardSprite = Sprite.Create(
-            texture,
-            new Rect(0, 0, 1, 1),
-            new Vector2(0.5f, 0.5f),
-            100f
-        );
-
-        shellShardSprite.name = "ShellShardSprite";
-
-        return shellShardSprite;
-    }
-
-
-    private IEnumerator AnimateShellShard(
-        RectTransform shardRect,
-        Image shardImage,
-        Vector2 velocity,
-        float rotationSpeed)
-    {
-        float elapsed = 0f;
-
-        float duration = Mathf.Max(0.05f, shellBreakEffectDuration);
-
-        UnityEngine.Color startColor = shardImage.color;
-
-        while (elapsed < duration && shardRect != null && shardImage != null)
-        {
-            float deltaTime = Time.unscaledDeltaTime;
-
-            elapsed += deltaTime;
-
-            float progress = Mathf.Clamp01(elapsed / duration);
-
-            // กระจายออกแล้วค่อย ๆ ตกลง
-            velocity += Vector2.down * 260f * deltaTime;
-
-            shardRect.anchoredPosition += velocity * deltaTime;
-
-            shardRect.Rotate(0f, 0f, rotationSpeed * deltaTime);
-
-            UnityEngine.Color color = startColor;
-            color.a = 1f - progress;
-
-            shardImage.color = color;
-
-            yield return null;
-        }
-
-        if (shardRect != null)
-        {
-            Destroy(shardRect.gameObject);
-        }
-    }
-    */
-
-    //private List<ContactPoint2D> contacts = new List<ContactPoint2D>();
-    //private void OnDrawGizmos()
-    //{
-    //    foreach (ContactPoint2D contact in contacts)
-    //    {
-    //        Vector2 normal = GetNormalTowardsPlayer(contact);
-
-    //        // จุดสัมผัส
-    //        Gizmos.color = UnityEngine.Color.red;
-    //        Gizmos.DrawSphere(contact.point, 0.08f);
-
-    //        // ทิศทาง Normal
-    //        //Gizmos.color = UnityEngine.Color.green;
-    //        //Gizmos.DrawLine(
-    //        //    contact.point,
-    //        //    contact.point + normal * 0.5f
-    //        //);
-    //    }
-    //}
 }
