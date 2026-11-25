@@ -49,11 +49,11 @@ TagManager:
   - name: Background 2
     uniqueID: 2991363139
     locked: 0
-  - name: Background 1
-    uniqueID: 3868668487
-    locked: 0
   - name: Default
     uniqueID: 0
+    locked: 0
+  - name: Background 1
+    uniqueID: 3868668487
     locked: 0
   - name: Level Layout
     uniqueID: 3364745469

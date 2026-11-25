@@ -523,7 +523,10 @@ public class PlayerController : MonoBehaviour
         //Debug.Log("in");
 
         if (isJumped && rb.linearVelocity.magnitude > 0.001f)
+        {
+            Debug.Log("inAir");
             return;
+        }
 
         isOnGround = true;
 
@@ -560,8 +563,8 @@ public class PlayerController : MonoBehaviour
             HideJumpTrajectory();
         }
 
-        if (!isAiming)
-            jumpState = JumpState.OnGround;
+        //if (!isAiming)
+        //    jumpState = JumpState.OnGround;
     }
 
     // เล็งแล้ว update ตำแหน่งของ mouse
@@ -848,16 +851,16 @@ public class PlayerController : MonoBehaviour
     // For Air Jump Item
     public bool RestoreAirJump()
     {
-        if (movementLocked || canAirJump)
-        {
-            return false;
-        }
+        //if (movementLocked || canAirJump)
+        //{
+        //    return false;
+        //}
 
         // ต้องอยู่กลางอากาศหลังจากกระโดดจากพื้นแล้ว
-        if (!isJumped || !isJumpedFromGround || isOnGround)
-        {
-            return false;
-        }
+        //if (!isJumped || !isJumpedFromGround || isOnGround)
+        //{
+        //    return false;
+        //}
 
         canAirJump = true;
 

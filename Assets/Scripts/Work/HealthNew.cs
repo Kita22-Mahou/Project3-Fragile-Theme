@@ -41,6 +41,12 @@ public class HealthNew : MonoBehaviour
     // ดาเมจที่ต่ำกว่าค่านี้ถือเป็นแค่การกระทบเบา ๆ จะไม่หัก HP
     [SerializeField] private float minCollisionDamage = 1f;
 
+    [SerializeField] private Transform particleSpawnPoint;
+
+    [SerializeField] private GameObject lowHurt;
+    [SerializeField] private GameObject midHurt;
+    [SerializeField] private GameObject highHurt;
+
     [Header("Wall Collision")]
 
     [SerializeField] private float minVerticalSpeedForWallDamage = 1f;
@@ -566,7 +572,20 @@ public class HealthNew : MonoBehaviour
             return;
         }
 
-        currentHP = Mathf.Clamp(currentHP - damage, 0f, maxHP);
+        if (damage <= 5)
+        {
+            Instantiate(lowHurt, particleSpawnPoint);
+        }
+        else if (damage > 5 && damage <= 10)
+        {
+            Instantiate(midHurt, particleSpawnPoint);
+        }
+        else if (damage > 10)
+        {
+            Instantiate(highHurt, particleSpawnPoint);
+        }
+
+            currentHP = Mathf.Clamp(currentHP - damage, 0f, maxHP);
         TriggerShellDamageEffect();
         UpdateSpriteResolverByHP();
 

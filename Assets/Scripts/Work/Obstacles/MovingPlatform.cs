@@ -4,54 +4,56 @@ using UnityEngine;
 [DefaultExecutionOrder(1000)]
 [RequireComponent(typeof(Rigidbody2D))]
 [RequireComponent(typeof(Collider2D))]
-public class MovingPlatform2D : MonoBehaviour
+public class MovingPlatform : MonoBehaviour
 {
-    [Header("Horizontal Movement")]
-    [Tooltip("ระยะที่แท่นเคลื่อนจากจุดเริ่มต้นไปทางซ้าย")]
-    [SerializeField] private float leftDistance = 5f;
-
-    [Tooltip("ระยะที่แท่นเคลื่อนจากจุดเริ่มต้นไปทางขวา")]
-    [SerializeField] private float rightDistance = 5f;
+    [Header("Movement Path")]
+    [Tooltip("แต่ละ Step เป็นระยะเคลื่อนที่จากจุดก่อนหน้า สามารถกำหนดได้ทั้ง X และ Y")]
+    [SerializeField]
+    private Vector2[] movementSteps =
+    {
+        new Vector2(5f, 0f),
+        new Vector2(0f, 3f),
+        new Vector2(-5f, 0f),
+        new Vector2(0f, -3f)
+    };
 
     [Header("Movement Settings")]
+    [Min(0f)]
     [SerializeField] private float moveSpeed = 3f;
-    [SerializeField] private float waitTime = 0.5f;
 
-    [Tooltip("เปิดไว้เพื่อให้แท่นเคลื่อนที่ซ้าย-ขวาซ้ำไปเรื่อย ๆ")]
+    [Min(0f)]
+    [SerializeField] private float waitTime = 0f;
+
     [SerializeField] private bool loopMovement = true;
 
-    [Header("Sprite & Collider Flip")]
-    [Tooltip("พลิก Sprite และรูปทรง Collider ตามทิศทางการเคลื่อนที่")]
     [SerializeField] private bool isFlipSprite = false;
-
-    [Header("Player Hit Pause")]
-    [Tooltip("เมื่อ Player สัมผัส Platform ให้หยุดการเคลื่อนที่ชั่วคราว")]
-    [SerializeField] private bool pauseWhenPlayerTouches = true;
-
-    [Tooltip("ระยะเวลาที่ Platform หยุดหลัง Player สัมผัส")]
+    [SerializeField] private bool triggerWhenPlayerTouches = true;
     [Min(0f)]
-    [SerializeField] private float playerHitPauseDuration = 1f;
-
-    [Header("Player Carry")]
-    [SerializeField] private float topTolerance = 0.15f;
+    [SerializeField] private float playerTriggerDuration = 1f;
 
     private Rigidbody2D rb;
     private Collider2D platformCollider;
     private SpriteRenderer sprite;
-    private PlayerController standingPlayer;
-    private readonly HashSet<Collider2D> playerContactColliders = new HashSet<Collider2D>();
 
-    // เก็บค่าเดิมเพื่อให้สามารถสะท้อน Collider กลับไปมาได้โดยไม่เพี้ยนสะสม
+    // เก็บ Collider ของ Player ที่กำลังสัมผัส เพื่อไม่เริ่ม Trigger ซ้ำ
+    // จนกว่า Player จะแยกออกจาก Platform จริง ๆ
+    private readonly HashSet<Collider2D> playerContactColliders = new HashSet<Collider2D>();
+    private readonly List<Collider2D> contactsToRemove = new List<Collider2D>();
+
+    // เก็บรูปทรงเดิมเพื่อสะท้อน Collider กลับไปมาโดยไม่เพี้ยนสะสม
     private bool originalSpriteFlipX;
     private Vector2 originalColliderOffset;
     private Vector2[][] originalPolygonPaths;
     private Vector2[] originalEdgePoints;
 
-    private Vector2 leftPoint;
-    private Vector2 rightPoint;
-    private int direction = 1; // 1 = ขวา, -1 = ซ้าย
+    private readonly List<Vector2> pathPoints = new List<Vector2>();
+
+    private int targetIndex = 1;
+    // 1 = เดินไปตามลำดับ Step, -1 = ย้อนกลับตาม Step เดิม
+    private int pathDirection = 1;
+
     private float waitTimer;
-    private float playerHitPauseTimer;
+    private float playerTriggerTimer;
     private bool isMoving;
 
     private void Awake()
@@ -67,13 +69,42 @@ public class MovingPlatform2D : MonoBehaviour
         rb.bodyType = RigidbodyType2D.Kinematic;
         rb.interpolation = RigidbodyInterpolation2D.Interpolate;
 
-        Vector2 startPosition = rb.position;
-        leftPoint = startPosition + Vector2.left * Mathf.Abs(leftDistance);
-        rightPoint = startPosition + Vector2.right * Mathf.Abs(rightDistance);
+        // เริ่มต้นเป็น Collider ปกติ และจะเปลี่ยนเป็น Trigger เมื่อ Player สัมผัสเท่านั้น
+        platformCollider.isTrigger = false;
 
-        direction = 1;
-        ApplyDirectionFlip();
-        isMoving = rightDistance > 0.01f || leftDistance > 0.01f;
+        BuildMovementPath();
+    }
+
+    private void BuildMovementPath()
+    {
+        pathPoints.Clear();
+        pathPoints.Add(rb.position);
+
+        if (movementSteps != null)
+        {
+            Vector2 point = rb.position;
+
+            for (int i = 0; i < movementSteps.Length; i++)
+            {
+                Vector2 step = movementSteps[i];
+
+                // ข้าม Step ที่ไม่มีระยะเคลื่อนที่
+                if (step.sqrMagnitude < 0.000001f)
+                    continue;
+
+                point += step;
+                pathPoints.Add(point);
+            }
+        }
+
+        targetIndex = 1;
+        pathDirection = 1;
+        isMoving = pathPoints.Count > 1;
+
+        if (isMoving)
+            ApplyDirectionFlip(pathPoints[1] - pathPoints[0]);
+        else
+            RestoreOriginalFlip();
     }
 
     private void CacheColliderGeometry()
@@ -94,15 +125,14 @@ public class MovingPlatform2D : MonoBehaviour
             originalEdgePoints = edge.points;
     }
 
-    private void ApplyDirectionFlip()
+    private void ApplyDirectionFlip(Vector2 movementDirection)
     {
-        if (!isFlipSprite)
+        if (!isFlipSprite || Mathf.Abs(movementDirection.x) < 0.0001f)
             return;
 
-        bool flip = direction < 0;
+        bool flip = movementDirection.x < 0f;
         float xSign = flip ? -1f : 1f;
 
-        // SpriteRenderer.flipX พลิกเฉพาะภาพ ส่วน Collider จะสะท้อนรูปทรงแยกต่างหาก
         if (sprite != null)
             sprite.flipX = originalSpriteFlipX ^ flip;
 
@@ -142,202 +172,199 @@ public class MovingPlatform2D : MonoBehaviour
         }
     }
 
-    private void FixedUpdate()
+    private void RestoreOriginalFlip()
     {
-        // หยุดทั้ง Platform และการพาผู้เล่น ขณะอยู่ในช่วง Hit Pause
-        if (playerHitPauseTimer > 0f)
-        {
-            playerHitPauseTimer = Mathf.Max(0f, playerHitPauseTimer - Time.fixedDeltaTime);
-
-            // ครบเวลาหยุดแล้ว เปลี่ยน Collider กลับเป็น Solid ก่อนให้แท่นเคลื่อนที่ต่อ
-            if (playerHitPauseTimer <= 0f)
-                platformCollider.isTrigger = false;
-
+        if (!isFlipSprite)
             return;
+
+        if (sprite != null)
+            sprite.flipX = originalSpriteFlipX;
+
+        platformCollider.offset = originalColliderOffset;
+
+        PolygonCollider2D polygon = platformCollider as PolygonCollider2D;
+        if (polygon != null && originalPolygonPaths != null)
+        {
+            for (int i = 0; i < originalPolygonPaths.Length; i++)
+                polygon.SetPath(i, originalPolygonPaths[i]);
         }
 
-        if (!isMoving)
+        EdgeCollider2D edge = platformCollider as EdgeCollider2D;
+        if (edge != null && originalEdgePoints != null)
+            edge.points = originalEdgePoints;
+    }
+
+    private void FixedUpdate()
+    {
+        CleanupSeparatedPlayerContacts();
+
+        // นับเวลา Trigger แยกจากการเคลื่อนที่: Platform จะไม่หยุดระหว่างนี้
+        if (playerTriggerTimer > 0f)
+        {
+            playerTriggerTimer = Mathf.Max(0f, playerTriggerTimer - Time.fixedDeltaTime);
+
+            if (playerTriggerTimer <= 0f)
+                platformCollider.isTrigger = false;
+        }
+
+        if (!isMoving || targetIndex < 0 || targetIndex >= pathPoints.Count)
             return;
 
         if (waitTimer > 0f)
         {
-            waitTimer -= Time.fixedDeltaTime;
+            waitTimer = Mathf.Max(0f, waitTimer - Time.fixedDeltaTime);
             return;
         }
 
-        Vector2 destination = direction > 0 ? rightPoint : leftPoint;
-        Vector2 oldPosition = rb.position;
+        Vector2 destination = pathPoints[targetIndex];
         Vector2 nextPosition = Vector2.MoveTowards(
-            oldPosition,
+            rb.position,
             destination,
             Mathf.Max(0f, moveSpeed) * Time.fixedDeltaTime
         );
 
-        Vector2 delta = nextPosition - oldPosition;
-
         rb.MovePosition(nextPosition);
-        CarryPlayer(delta);
 
         if (Vector2.Distance(nextPosition, destination) < 0.01f)
         {
             rb.MovePosition(destination);
-            ReachEndpoint();
+            ReachWaypoint();
         }
     }
 
-    private void ReachEndpoint()
+    private void ReachWaypoint()
     {
         waitTimer = Mathf.Max(0f, waitTime);
 
-        if (direction > 0)
+        if (pathPoints.Count <= 1)
         {
-            // ถึงด้านขวาแล้ว เปลี่ยนไปด้านซ้าย
-            direction = -1;
+            isMoving = false;
+            return;
         }
-        else
+
+        int nextIndex = targetIndex + pathDirection;
+
+        // ถึงปลายทางด้านใดด้านหนึ่งแล้ว ให้ย้อนกลับตาม Waypoint เดิม
+        if (nextIndex >= pathPoints.Count || nextIndex < 0)
         {
-            // ถึงด้านซ้ายแล้ว ถ้าไม่วนซ้ำให้หยุด
             if (!loopMovement)
             {
                 isMoving = false;
                 return;
             }
 
-            direction = 1;
+            pathDirection *= -1;
+            nextIndex = targetIndex + pathDirection;
         }
 
-        ApplyDirectionFlip();
+        targetIndex = nextIndex;
+
+        // พลิก Sprite และ Collider ตามทิศทางแนวนอนของช่วงถัดไป
+        if (targetIndex >= 0 && targetIndex < pathPoints.Count)
+        {
+            Vector2 nextDelta = pathPoints[targetIndex] - rb.position;
+            ApplyDirectionFlip(nextDelta);
+        }
     }
 
-    private void CarryPlayer(Vector2 delta)
+    private void HandlePlayerTouch(Collider2D other)
     {
-        if (standingPlayer == null || standingPlayer.movementLocked || delta.sqrMagnitude < 0.000001f)
+        if (other == null || !triggerWhenPlayerTouches)
             return;
 
-        Rigidbody2D playerRb = standingPlayer.GetComponent<Rigidbody2D>();
-        Collider2D playerCollider = standingPlayer.GetComponent<Collider2D>();
-
-        if (playerCollider == null)
-            playerCollider = standingPlayer.GetComponentInChildren<Collider2D>();
-
-        if (playerRb == null || playerCollider == null)
+        PlayerController player = other.GetComponentInParent<PlayerController>();
+        if (player == null)
             return;
 
-        // ไม่พาผู้เล่นที่กำลังพุ่งขึ้น
-        if (playerRb.linearVelocity.y > 0.1f)
+        bool isNewPlayerContact = playerContactColliders.Add(other);
+        if (!isNewPlayerContact || playerTriggerTimer > 0f)
             return;
 
-        // ตรวจว่าผู้เล่นยังยืนอยู่ด้านบนของแท่น
-        if (playerCollider.bounds.min.y < platformCollider.bounds.max.y - topTolerance)
+        float triggerDuration = Mathf.Max(0f, playerTriggerDuration);
+        if (triggerDuration <= 0f)
             return;
 
-        // delta ของแท่นเป็นแนวนอนเท่านั้น
-        playerRb.MovePosition(playerRb.position + delta);
+
+        playerTriggerTimer = triggerDuration;
+        platformCollider.isTrigger = true;
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        PlayerController player = collision.collider.GetComponentInParent<PlayerController>();
-
-        if (player != null && collision.collider != null)
-        {
-            bool isNewPlayerContact = playerContactColliders.Add(collision.collider);
-
-            // หยุดหนึ่งครั้งเมื่อเริ่มสัมผัส ไม่ต่อเวลาใหม่ทุก Physics Frame
-            if (isNewPlayerContact && pauseWhenPlayerTouches && playerHitPauseTimer <= 0f)
-            {
-                float pauseDuration = Mathf.Max(0f, playerHitPauseDuration);
-
-                if (pauseDuration > 0f)
-                {
-                    playerHitPauseTimer = pauseDuration;
-
-                    // เปลี่ยนเป็น Trigger ระหว่างหยุดเพราะผู้เล่นชน
-                    platformCollider.isTrigger = true;
-                }
-                else
-                {
-                    // ถ้าไม่ได้ตั้งเวลาหยุด ให้ Collider คงเป็น Solid
-                    platformCollider.isTrigger = false;
-                }
-            }
-        }
-
-        CheckPlayerOnPlatform(collision);
+        HandlePlayerTouch(collision.collider);
     }
 
-    private void OnCollisionStay2D(Collision2D collision)
+    private void OnTriggerEnter2D(Collider2D other)
     {
-        CheckPlayerOnPlatform(collision);
+        HandlePlayerTouch(other);
     }
 
     private void OnCollisionExit2D(Collision2D collision)
     {
-        PlayerController player = collision.collider.GetComponentInParent<PlayerController>();
-
-        if (collision.collider != null)
-            playerContactColliders.Remove(collision.collider);
-
-        if (player == standingPlayer && !HasContactFromPlayer(player))
-            standingPlayer = null;
+        RemoveContactIfSeparated(collision.collider);
     }
 
     private void OnTriggerExit2D(Collider2D other)
     {
-        PlayerController player = other.GetComponentInParent<PlayerController>();
-
-        playerContactColliders.Remove(other);
-
-        if (player == standingPlayer && !HasContactFromPlayer(player))
-            standingPlayer = null;
+        RemoveContactIfSeparated(other);
     }
 
-    private bool HasContactFromPlayer(PlayerController player)
+    private void CleanupSeparatedPlayerContacts()
     {
-        if (player == null)
-            return false;
+        contactsToRemove.Clear();
 
-        foreach (Collider2D contactCollider in playerContactColliders)
+        foreach (Collider2D contact in playerContactColliders)
         {
-            if (contactCollider != null &&
-                contactCollider.GetComponentInParent<PlayerController>() == player)
-                return true;
+            if (contact == null)
+            {
+                contactsToRemove.Add(contact);
+                continue;
+            }
+
+            ColliderDistance2D distance = platformCollider.Distance(contact);
+            if (distance.distance > 0.02f)
+                contactsToRemove.Add(contact);
         }
 
-        return false;
+        for (int i = 0; i < contactsToRemove.Count; i++)
+            playerContactColliders.Remove(contactsToRemove[i]);
     }
 
-    private void CheckPlayerOnPlatform(Collision2D collision)
+    private void RemoveContactIfSeparated(Collider2D other)
     {
-        PlayerController player = collision.collider.GetComponentInParent<PlayerController>();
-
-        if (player == null)
+        if (other == null || platformCollider == null)
             return;
 
-        Collider2D playerCollider = collision.collider;
-        bool onTop = playerCollider.bounds.min.y >= platformCollider.bounds.max.y - topTolerance;
-
-        if (onTop)
-            standingPlayer = player;
+        ColliderDistance2D distance = platformCollider.Distance(other);
+        if (distance.distance > 0.02f)
+            playerContactColliders.Remove(other);
     }
 
     private void OnDrawGizmosSelected()
     {
-        Vector2 startPosition = Application.isPlaying && rb != null
+        Vector2 origin = Application.isPlaying && rb != null
             ? rb.position
             : (Vector2)transform.position;
 
-        Vector2 left = startPosition + Vector2.left * Mathf.Abs(leftDistance);
-        Vector2 right = startPosition + Vector2.right * Mathf.Abs(rightDistance);
-
         Gizmos.color = Color.green;
-        Gizmos.DrawWireSphere(startPosition, 0.15f);
+        Gizmos.DrawWireSphere(origin, 0.15f);
 
-        Gizmos.color = Color.yellow;
-        Gizmos.DrawLine(left, right);
+        if (movementSteps == null)
+            return;
 
-        Gizmos.color = Color.cyan;
-        Gizmos.DrawWireSphere(left, 0.15f);
-        Gizmos.DrawWireSphere(right, 0.15f);
+        Vector2 previous = origin;
+
+        for (int i = 0; i < movementSteps.Length; i++)
+        {
+            Vector2 next = previous + movementSteps[i];
+
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawLine(previous, next);
+
+            Gizmos.color = Color.cyan;
+            Gizmos.DrawWireSphere(next, 0.15f);
+
+            previous = next;
+        }
     }
 }
