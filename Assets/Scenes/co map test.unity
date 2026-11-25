@@ -498084,11 +498084,14 @@ MonoBehaviour:
   - {fileID: 8300000, guid: e186c5a119d7ace478ae87b116075c02, type: 3}
   - {fileID: 8300000, guid: 681c8239751e91d4cb4370c3ef13aac2, type: 3}
   checkpointSound: {fileID: 8300000, guid: 5f0ae1531b186ce42aaa249c9b0fac3f, type: 3}
+  itemPickupSound: {fileID: 8300000, guid: f218467e54473374793088e34af1b835, type: 3}
+  itemPickupSource: {fileID: 0}
   masterVolume: 1
   hurtVolume: 1
   jumpVolume: 1
   deathVolume: 1
   checkpointVolume: 1
+  itemPickupVolume: 1
 --- !u!82 &1596613153
 AudioSource:
   m_ObjectHideFlags: 0

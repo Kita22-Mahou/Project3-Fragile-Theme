@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UI;
 using System.Collections;
 using UnityEngine.InputSystem;
 using Unity.VisualScripting;
@@ -129,6 +130,10 @@ public class PlayerController : MonoBehaviour
     public bool movementLocked = false;
     public float jumpPowerMultiplier = 1f;
 
+    [Header("Air Jump Wing UI")]
+    [SerializeField] private Image wingLeft;
+    [SerializeField] private Image wingRight;
+
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
@@ -146,6 +151,7 @@ public class PlayerController : MonoBehaviour
         AirAimingMaxChargeTime = maxChargeTime / 3f;
         NormalMaxChargeTime = maxChargeTime;
 
+        UpdateAirJumpWings();
         SetupInShellBubbleVisual();
         SetupParryWarningIcon();
         Grounded();
@@ -371,6 +377,7 @@ public class PlayerController : MonoBehaviour
                 Jump();
 
                 canAirJump = false;
+                UpdateAirJumpWings();
             }
 
             if (isTempAiming)
@@ -563,8 +570,8 @@ public class PlayerController : MonoBehaviour
             HideJumpTrajectory();
         }
 
-        //if (!isAiming)
-        //    jumpState = JumpState.OnGround;
+        if (!isAiming)
+            jumpState = JumpState.OnGround;
     }
 
     // เล็งแล้ว update ตำแหน่งของ mouse
@@ -863,6 +870,7 @@ public class PlayerController : MonoBehaviour
         //}
 
         canAirJump = true;
+        UpdateAirJumpWings();
 
         Debug.Log("Air Jump Restored!");
 
@@ -921,6 +929,7 @@ public class PlayerController : MonoBehaviour
 
         isJumpedFromGround = false;
         canAirJump = true;
+        UpdateAirJumpWings();
 
         jumpChargeTime = 0f;
         jumpPowerMultiplier = 1f;
@@ -938,6 +947,17 @@ public class PlayerController : MonoBehaviour
         HideJumpTrajectory();
     }
     #endregion
+
+    private void UpdateAirJumpWings()
+    {
+        bool showWings = canAirJump;
+
+        if (wingLeft != null)
+            wingLeft.enabled = showWings;
+
+        if (wingRight != null)
+            wingRight.enabled = showWings;
+    }
 
     private void OnDrawGizmosSelected()
     {

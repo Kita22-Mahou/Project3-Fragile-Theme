@@ -1,4 +1,3 @@
-
 using UnityEngine;
 
 [RequireComponent(typeof(AudioSource))]
@@ -18,6 +17,10 @@ public class GameAudio : MonoBehaviour
     [Header("Checkpoint Sound - 1 Clip")]
     [SerializeField] private AudioClip checkpointSound;
 
+    [Header("Item Pickup Sound")]
+    [SerializeField] private AudioClip itemPickupSound;
+    [SerializeField] private AudioSource itemPickupSource;
+
     [Header("Volume")]
     [Range(0f, 1f)]
     [SerializeField] private float masterVolume = 1f;
@@ -33,6 +36,9 @@ public class GameAudio : MonoBehaviour
 
     [Range(0f, 1f)]
     [SerializeField] private float checkpointVolume = 1f;
+
+    [Range(0f, 1f)]
+    [SerializeField] private float itemPickupVolume = 1f;
 
     private AudioSource sfxSource;
 
@@ -51,17 +57,30 @@ public class GameAudio : MonoBehaviour
         Instance = this;
 
         sfxSource = GetComponent<AudioSource>();
-        sfxSource.playOnAwake = false;
-        sfxSource.loop = false;
-        sfxSource.spatialBlend = 0f;
+        ConfigureAudioSource(sfxSource);
+
+        // ใช้ AudioSource แยก เพื่อให้หยุด/เริ่มเสียงเก็บไอเทมได้
+        // โดยไม่กระทบเสียงเจ็บ กระโดด ตาย หรือ Checkpoint
+        if (itemPickupSource == null || itemPickupSource == sfxSource)
+            itemPickupSource = gameObject.AddComponent<AudioSource>();
+
+        ConfigureAudioSource(itemPickupSource);
+    }
+
+    private void ConfigureAudioSource(AudioSource source)
+    {
+        if (source == null)
+            return;
+
+        source.playOnAwake = false;
+        source.loop = false;
+        source.spatialBlend = 0f;
     }
 
     private void OnDestroy()
     {
         if (Instance == this)
-        {
             Instance = null;
-        }
     }
 
     private void PlayRandomSound(
@@ -69,36 +88,26 @@ public class GameAudio : MonoBehaviour
         ref int lastIndex,
         float volume)
     {
-        if (clips == null || clips.Length == 0)
-        {
+        if (clips == null || clips.Length == 0 || sfxSource == null)
             return;
-        }
 
         int validCount = 0;
-
         for (int i = 0; i < clips.Length; i++)
         {
             if (clips[i] != null)
-            {
                 validCount++;
-            }
         }
 
         if (validCount == 0)
-        {
             return;
-        }
 
         int selectedIndex;
 
         if (validCount == 1)
         {
             selectedIndex = 0;
-
-            while (clips[selectedIndex] == null)
-            {
+            while (selectedIndex < clips.Length && clips[selectedIndex] == null)
                 selectedIndex++;
-            }
         }
         else
         {
@@ -106,29 +115,19 @@ public class GameAudio : MonoBehaviour
             {
                 selectedIndex = Random.Range(0, clips.Length);
             }
-            while (clips[selectedIndex] == null ||
-                   selectedIndex == lastIndex);
+            while (clips[selectedIndex] == null || selectedIndex == lastIndex);
         }
 
         lastIndex = selectedIndex;
-
-        sfxSource.PlayOneShot(
-            clips[selectedIndex],
-            masterVolume * volume
-        );
+        sfxSource.PlayOneShot(clips[selectedIndex], masterVolume * volume);
     }
 
     private void PlaySingleSound(AudioClip clip, float volume)
     {
         if (clip == null || sfxSource == null)
-        {
             return;
-        }
 
-        sfxSource.PlayOneShot(
-            clip,
-            masterVolume * volume
-        );
+        sfxSource.PlayOneShot(clip, masterVolume * volume);
     }
 
     // เรียกเมื่อผู้เล่นได้รับความเสียหาย
@@ -153,5 +152,17 @@ public class GameAudio : MonoBehaviour
     public void PlayCheckpoint()
     {
         PlaySingleSound(checkpointSound, checkpointVolume);
+    }
+
+    // เสียงเก็บไอเทม: ถ้ามีการเรียกซ้ำ จะหยุดเสียงเก่าก่อนเล่นเสียงใหม่ทันที
+    public void PlayItemPickup()
+    {
+        if (itemPickupSound == null || itemPickupSource == null)
+            return;
+
+        itemPickupSource.Stop();
+        itemPickupSource.clip = itemPickupSound;
+        itemPickupSource.volume = masterVolume * itemPickupVolume;
+        itemPickupSource.Play();
     }
 }
