@@ -54,7 +54,7 @@ public class AirJumpItem : MonoBehaviour
             return;
 
         collected = true;
-
+        GameAudio.Instance?.PlayItemPickup();
         SetItemVisible(false);
 
         StartCoroutine(RespawnItem());
