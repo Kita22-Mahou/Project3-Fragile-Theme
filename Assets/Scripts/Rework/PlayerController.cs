@@ -655,6 +655,8 @@ public class PlayerController : MonoBehaviour
         rb.linearVelocity = launchVelocity;
         isJumped = true;
         jumpChargeTime = 0f;
+
+        GameAudio.Instance?.PlayGroundJump();
     }
 
     private float GetJumpPower()

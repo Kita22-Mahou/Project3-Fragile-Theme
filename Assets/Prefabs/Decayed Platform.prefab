@@ -106,7 +106,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2bf38a6ae9bf3ce4696aa9098662bcf2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Decayed
-  timeBeforeBreak: 2
+  timeBeforeBreak: 1.45
   timeBeforeRestore: 3
   playerLayer:
     serializedVersion: 2
