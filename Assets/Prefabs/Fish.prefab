@@ -171,15 +171,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4c36d6654f44ea64ba1fd2368d2086b3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MovingPlatform
-  leftDistance: 5
-  rightDistance: 5
+  movementSteps:
+  - {x: 5, y: 0}
+  - {x: 0, y: 3}
+  - {x: -5, y: 0}
+  - {x: 0, y: -3}
   moveSpeed: 4
   waitTime: 0.5
   loopMovement: 1
   isFlipSprite: 1
-  pauseWhenPlayerTouches: 0
-  playerHitPauseDuration: 1
-  topTolerance: 0.15
+  triggerWhenPlayerTouches: 1
+  playerTriggerDuration: 2
 --- !u!114 &4751533124785210743
 MonoBehaviour:
   m_ObjectHideFlags: 0
